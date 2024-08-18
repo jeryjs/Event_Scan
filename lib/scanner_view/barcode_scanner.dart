@@ -95,7 +95,7 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
       },
       onDetect: (data) {
         final barcode = data.barcodes.firstOrNull;
-        if (barcode != null && barcode.rawValue!.startsWith("9")) {
+        if (barcode != null && barcode.rawValue!.startsWith("FP24")) {
           _onBarcodeScanned(barcode.rawValue!);
           controller.stop();
         }
