@@ -10,10 +10,15 @@ dependencies:
   flutter:
     sdk: flutter
   firebase_core: ^3.3.0
-  firebase_auth: ^5.1.4
   cloud_firestore: ^5.2.1
-  barcode_scan2: ^4.3.3
   provider: ^6.1.2
+  flutter_barcode_scanner: ^2.0.0
+  audioplayers: ^6.0.0
+  mobile_scanner: ^5.1.1
+  zxing2: ^0.2.3
+  shared_preferences: ^2.3.2
+  camera: ^0.11.0+2
+  image: ^4.2.0
 
 dev_dependencies:
   flutter_test:
@@ -22,3 +27,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/sounds/
