@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -7,14 +9,19 @@ import 'shared_prefs.dart';
 class Database {
   static Future<bool?> checkBarcode(String barcode) async {
     final collection = await SharedPrefs.getCollectionName() as String;
-    var doc = await FirebaseFirestore.instance.collection(collection).doc(barcode).get();
+    // var doc = await FirebaseFirestore.instance.collection(collection).doc(barcode).get();
+    final fileString = await rootBundle.loadString("assets/barcodes_ce.txt");
+    final lines = fileString.split("\n");
+    final line = lines.contains(barcode)?barcode:"FP24060397"; // FP24060397
+
+    var doc = await FirebaseFirestore.instance.collection('FreshersParty_2024').doc(line).get();
 
     if (doc.exists) {
       final isScanned = doc['scanned']?? false;
-      FirebaseFirestore.instance.collection(collection).doc(barcode).update({
-        'scanned': true,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      // FirebaseFirestore.instance.collection(collection).doc(barcode).update({
+      //   'scanned': true,
+      //   'timestamp': FieldValue.serverTimestamp(),
+      // });
       return isScanned;
     } else {
       return null;
@@ -37,28 +44,43 @@ class Database {
         .snapshots();
   }
 
-  static setUpBarcodes(String path) async {
+  static setUpBarcodes(String path, String type) async {
     if (!kDebugMode) return;
-    
-    final firestore = FirebaseFirestore.instance;
-    final batch = firestore.batch();
 
     final fileString = await rootBundle.loadString(path);
-    fileString.split("\n").forEach((line) {
-      final id = line;
-      const scanned = false;
-      final timestamp = DateTime.fromMillisecondsSinceEpoch(1641031200000);   // 2022-01-01 10:00:00.000Z
+    final lines = fileString.split("\n");
 
-      final docRef = firestore.collection('FreshersParty_2024').doc(id);
-      batch.set(docRef, { 'scanned': scanned, 'timestamp': timestamp });
-      debugPrint(line);
+    int index = 0;
+    final notexist = [];
+    Timer.periodic(const Duration(milliseconds: 200), (timer) async {
+      if (index >= lines.length) {
+        timer.cancel();
+        debugPrint("Batch committed: $type");
+        debugPrint("Not exist: $notexist");
+        if(type == "ce") {
+          await Database.setUpBarcodes('assets/barcodes_se.txt', "se");
+        } else {
+          return;
+        }
+      }
+
+      final line = lines[index];
+      var doc = await FirebaseFirestore.instance.collection('FreshersParty_2024').doc(line).get();
+      // FirebaseFirestore.instance.collection('FreshersParty_2024').doc(line).set({
+      //   'scanned': false,
+      //   'timestamp': DateTime.fromMillisecondsSinceEpoch(0),
+      //   'type': type
+      // });
+
+      if (!doc.exists) {
+        notexist.add(line);
+        debugPrint("$index)\t not exists: \t $line");
+      } else {
+        debugPrint("$index)\t exists: \t $line");
+      }
+      // debugPrint("$index)\t $line");
+
+      index++;
     });
-
-    try {
-      batch.commit();
-      debugPrint('Batch write successful');
-    } catch (error) {
-      debugPrint('Error writing batch: $error');
-    }
   }
 }
