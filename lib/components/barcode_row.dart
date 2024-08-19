@@ -9,47 +9,55 @@ class BarcodeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final subtitle =
-        (document['timestamp'].millisecondsSinceEpoch == 1641031200000)
-            ? "Not yet Scanned"
-            : document['timestamp'].toDate().toString();
+    final isSingle = (document['type'] ?? "se") == "se";
+    final subtitle = (document['timestamp'].millisecondsSinceEpoch == 0)
+        ? "Not yet Scanned"
+        : document['timestamp'].toDate().toString();
     
-    return ListTile(
-      title: Text(document.id),
-      subtitle: Text(subtitle),
-      trailing: CircleAvatar(
-        backgroundColor: document['scanned'] ? Colors.green : Colors.blueGrey,
-        child: Icon(
-          document['scanned'] ? Icons.check : Icons.pending,
-          color: Colors.white,
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: Colors.transparent,
+          child: Icon(
+            isSingle ? Icons.person : Icons.people_alt,
+            color: isSingle ? Colors.blue[100] : Colors.pink[100],
+          ),
         ),
+        title: Text(document.id),
+        subtitle: Text(subtitle),
+        trailing: CircleAvatar(
+          backgroundColor: document['scanned'] ? Colors.green : Colors.blueGrey,
+          child: Icon(
+            document['scanned'] ? Icons.check : Icons.more_horiz,
+          ),
+        ),
+        onLongPress: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text("Confirm Reset"),
+                content: const Text("Are you sure you want to reset this barcode?"),
+                actions: [
+                  TextButton(
+                    child: const Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  TextButton(
+                    child: const Text("Confirm"),
+                    onPressed: () {
+                      Database.resetBarcode(document.id);
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
-      onLongPress: () {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Confirm Reset"),
-              content: const Text("Are you sure you want to reset this barcode?"),
-              actions: [
-                TextButton(
-                  child: const Text("Cancel"),
-                  onPressed: () {
-                    Navigator.of(context).pop(false);
-                  },
-                ),
-                TextButton(
-                  child: const Text("Confirm"),
-                  onPressed: () {
-                    Database.resetBarcode(document.id);
-                    Navigator.of(context).pop(true);
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 }
