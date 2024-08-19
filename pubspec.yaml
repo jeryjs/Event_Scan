@@ -1,7 +1,7 @@
 name: party_scan
-description: "A new Flutter project."
+description: "An app designed to streamline barcode scanning at events like freshers' parties. Ensures smooth and efficient entry management using Firestore database by checking whether tickets have been scanned before with real-time sync between devices."
 publish_to: 'none'
-version: 1.0.1+2
+version: 1.1.0+3
 
 environment:
   sdk: ^3.5.0
