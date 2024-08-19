@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ResultDialog extends StatefulWidget {
-  final bool isScanned;
+  final bool? isScanned;
   final String barcode;
   final VoidCallback onDismissed;
 
@@ -27,7 +27,11 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
-      end: widget.barcode == "Unknown Barcode" ? Colors.amber[800] : widget.isScanned ? Colors.red : Colors.green,
+      end: widget.isScanned == null
+          ? Colors.amber[800]
+          : widget.isScanned!
+              ? Colors.red
+              : Colors.green,
     ).animate(_controller);
     _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
     _controller.forward();
@@ -41,10 +45,21 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    final alertIcon = widget.isScanned == null
+        ? Icons.warning_amber
+        : widget.isScanned!
+            ? Icons.close
+            : Icons.check;
+    final alertTitle = widget.isScanned == null
+        ? "Unknown Barcode"
+        : widget.isScanned!
+            ? "Already Scanned!"
+            : "Scan Successful!";
+
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        _controller.reverse();
         widget.onDismissed();
-        return true;
       },
       child: ScaleTransition(
         scale: _scaleAnimation,
@@ -59,13 +74,9 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(widget.isScanned ? Icons.close : Icons.check, color: Colors.white),
+                      Icon(alertIcon, color: Colors.white, size: 40),
                       const SizedBox(width: 10),
-                      Text(
-                          widget.isScanned
-                              ? "Already Scanned!"
-                              : "Scan Successful!",
-                          style: const TextStyle(color: Colors.white)),
+                      Text(alertTitle, style: const TextStyle(color: Colors.white, fontSize: 26)),
                     ],
                   ),
                   Text(widget.barcode),

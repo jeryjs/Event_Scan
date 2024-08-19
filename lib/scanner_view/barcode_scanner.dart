@@ -19,17 +19,9 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
   );
 
   void _onBarcodeScanned(String barcode) async {
-    late bool isScanned;
-    await Database.checkBarcode(barcode).then((value) {
-      if (value == null) {
-        isScanned = true;
-        barcode = "Unknown Barcode";
-      } else {
-        isScanned = value;
-      }
-    });
+    bool? isScanned = await Database.checkBarcode(barcode);
 
-    if (isScanned) {
+    if (isScanned?? true) {
       SoundManager.playFailureSound();
     } else {
       SoundManager.playSuccessSound();
