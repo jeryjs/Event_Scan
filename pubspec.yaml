@@ -14,6 +14,7 @@ dependencies:
   audioplayers: ^6.0.0
   mobile_scanner: ^5.1.1
   shared_preferences: ^2.3.2
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +27,20 @@ flutter:
   assets:
     - assets/
     - assets/sounds/
+
+### flutter pub run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/launcher_icons/ic_launcher.jpg"
+  android: true
+  ios: true
+  adaptive_icon_foreground: "assets/launcher_icons/ic_launcher_foreground.png"
+  adaptive_icon_background: "#b3c9ff"
+  remove_alpha_ios: true
+  background_color_ios: "#b3c9ff"
+  windows:
+    generate: true
+    image_path: "assets/launcher_icons/icon-1024x1024.png"
+    icon_size: 48 # min:48, max:256, default: 48
+  macos:
+    generate: true
+    image_path: "assets/launcher_icons/icon-1024x1024.png"
