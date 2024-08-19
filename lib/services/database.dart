@@ -33,7 +33,6 @@ class Database {
     return FirebaseFirestore.instance
         .collection(collection)
         .where('scanned', isEqualTo: false)
-        .orderBy("timestamp", descending: true)
         .snapshots();
   }
 
