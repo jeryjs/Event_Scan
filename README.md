@@ -37,7 +37,7 @@ Party Scan is a modern Flutter-based app designed to streamline barcode scanning
      - Alternatively, if you have access to Xcode, you can build and install the app directly.
 
 3. **Launch the App**:
-   - On the first launch, you'll be prompted to set the collection name, which will be used to store your scanned barcodes in Firebase. The default is set to `FreshersParty_2024`, but you can change this in the settings at any time.
+   - On the first launch, you'll be prompted to set the collection name, which will be used to retrieve your barcodes databse from Firebase.
    - After configuring the collection name, the app is ready to start scanning barcodes!
 
 
