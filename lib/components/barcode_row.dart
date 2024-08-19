@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:party_scan/services/database.dart';
 
 class BarcodeRow extends StatelessWidget {
   final DocumentSnapshot document;
@@ -23,6 +24,32 @@ class BarcodeRow extends StatelessWidget {
           color: Colors.white,
         ),
       ),
+      onLongPress: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text("Confirm Reset"),
+              content: const Text("Are you sure you want to reset this barcode?"),
+              actions: [
+                TextButton(
+                  child: const Text("Cancel"),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+                TextButton(
+                  child: const Text("Confirm"),
+                  onPressed: () {
+                    Database.resetBarcode(document.id);
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
