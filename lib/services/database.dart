@@ -33,8 +33,15 @@ class Database {
     return FirebaseFirestore.instance
         .collection(collection)
         .where('scanned', isEqualTo: false)
-        .orderBy("timestamp", descending: true)
         .snapshots();
+  }
+
+  static Future<void> resetBarcode(String barcode) async {
+    final collection = await SharedPrefs.getCollectionName() as String;
+    await FirebaseFirestore.instance.collection(collection).doc(barcode).update({
+      'scanned': false,
+      'timestamp': DateTime.fromMillisecondsSinceEpoch(0),
+    });
   }
 
   static setUpBarcodes(String path, String type, collection) async {
