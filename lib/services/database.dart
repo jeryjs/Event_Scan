@@ -37,7 +37,7 @@ class Database {
         .snapshots();
   }
 
-  static setUpBarcodes(String path) async {
+  static setUpBarcodes(String path, String type, collection) async {
     if (!kDebugMode) return;
     
     final firestore = FirebaseFirestore.instance;
@@ -45,13 +45,15 @@ class Database {
 
     final fileString = await rootBundle.loadString(path);
     fileString.split("\n").forEach((line) {
-      final id = line;
-      const scanned = false;
-      final timestamp = DateTime.fromMillisecondsSinceEpoch(1641031200000);   // 2022-01-01 10:00:00.000Z
+      final barcode = line.trim();  // Remove the carriage return
 
-      final docRef = firestore.collection('FreshersParty_2024').doc(id);
-      batch.set(docRef, { 'scanned': scanned, 'timestamp': timestamp });
-      debugPrint(line);
+      final docRef = firestore.collection(collection).doc(barcode);
+      batch.set(docRef, {
+        'scanned': false,
+        'timestamp': DateTime.fromMillisecondsSinceEpoch(0),
+        'type': type,
+      });
+      debugPrint(barcode);
     });
 
     try {
