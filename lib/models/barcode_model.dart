@@ -18,13 +18,14 @@ class BarcodeModel {
   });
 
   factory BarcodeModel.fromDocument(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>?;
     return BarcodeModel(
-      code: doc['code'] ?? '',
-      name: doc['name'] ?? '',
-      mail: doc['mail'] ?? '',
-      phone: doc['phone'] ?? '',
-      scanned: List<String>.from(doc['scanned'] ?? []),
-      timestamp: doc['timestamp'] ?? Timestamp.now(),
+      code: data?['code'] ?? '',
+      name: data?['name'] ?? '',
+      mail: data?['mail'] ?? '',
+      phone: data?['phone'] ?? '',
+      scanned: List<String>.from(data?['scanned'] ?? []),
+      timestamp: data?['timestamp'] ?? Timestamp.now(),
     );
   }
 

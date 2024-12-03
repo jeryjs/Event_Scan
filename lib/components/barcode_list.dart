@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import 'barcode_row.dart';
 import '../models/barcode_model.dart';
 
@@ -59,13 +60,17 @@ class BarcodeListState extends State<BarcodeList> {
                         : !barcode.scanned.contains(widget.category);
 
                 return matchesCategory &&
+                    barcode.code.isNotEmpty &&
                     (barcode.code.contains(searchTerm) ||
                      barcode.timestamp.toDate().toString().contains(searchTerm));
               }).toList();
 
               final sortedDocs = filteredDocs
-                ..sort((a, b) => (b['timestamp'] as Timestamp)
-                    .compareTo(a['timestamp'] as Timestamp));
+                ..sort((a, b) {
+                  final aTimestamp = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+                  final bTimestamp = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+                  return (bTimestamp ?? Timestamp.now()).compareTo(aTimestamp ?? Timestamp.now());
+                });
 
               return ListView.builder(
                 controller: widget.scrollController,
