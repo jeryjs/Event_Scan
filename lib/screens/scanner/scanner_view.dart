@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_scan/screens/scanner/bottom_bar.dart';
 import 'barcode_scanner.dart';
 
 class ScannerView extends StatelessWidget {
@@ -12,7 +13,10 @@ class ScannerView extends StatelessWidget {
       appBar: AppBar(
         title: Text(category),
       ),
-      body: BarcodeScanner(category: category),
+      body: Stack(children: [
+        BarcodeScanner(category: category),
+        BottomBar(category: category),
+      ]),
     );
   }
 }

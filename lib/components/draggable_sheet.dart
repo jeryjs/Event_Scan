@@ -5,9 +5,9 @@ import 'barcode_list.dart';
 
 class DraggableSheet extends StatelessWidget {
   final int index;
-  final String collection;
+  final String category;
 
-  const DraggableSheet({super.key, required this.index, required this.collection});
+  const DraggableSheet({super.key, required this.index, required this.category});
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +33,15 @@ class DraggableSheet extends StatelessWidget {
             body: TabBarView(
               children: [
                 BarcodeList(
-                  stream: Database.getBarcodes(category: collection, isScanned: true),
+                  stream: Database.getBarcodes(category: category, isScanned: true),
                   scrollController: scrollController,
-                  category: collection,
+                  category: category,
                   isScanned: true,
                 ),
                 BarcodeList(
-                  stream: Database.getBarcodes(category: collection, isScanned: false),
+                  stream: Database.getBarcodes(category: category, isScanned: false),
                   scrollController: scrollController,
-                  category: collection,
+                  category: category,
                   isScanned: false,
                 ),
               ],
