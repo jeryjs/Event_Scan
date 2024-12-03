@@ -5,7 +5,7 @@ import 'package:party_scan/components/barcode_row.dart';
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
   final ScrollController scrollController;
-  const BarcodeList({required this.stream, required this.scrollController});
+  const BarcodeList({super.key, required this.stream, required this.scrollController});
 
   @override
   _BarcodeListState createState() => _BarcodeListState();
@@ -21,7 +21,7 @@ class _BarcodeListState extends State<BarcodeList> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Search by time or code',
               prefixIcon: Icon(Icons.search),
             ),
@@ -37,7 +37,7 @@ class _BarcodeListState extends State<BarcodeList> {
             stream: widget.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
               final docs = snapshot.data!.docs;
               final filteredDocs = docs.where((doc) {

@@ -5,6 +5,8 @@ import '../scanner_view/barcode_scanner.dart';
 import '../services/shared_prefs.dart';
 
 class ScannerView extends StatefulWidget {
+  const ScannerView({super.key});
+
   @override
   _ScannerViewState createState() => _ScannerViewState();
 }
