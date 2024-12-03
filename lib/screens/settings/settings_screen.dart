@@ -21,17 +21,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    print('Loading settings...');
-    var snapshot = await FirebaseFirestore.instance.collection('settings').doc('config').get();
+    var snapshot = await FirebaseFirestore.instance
+        .collection('settings')
+        .doc('config')
+        .get();
     if (snapshot.exists) {
       var data = snapshot.data() as Map<String, dynamic>;
       _collectionNameController.text = data['collectionName'] ?? 'FDP_2024';
       _startDate = (data['startDate'] as Timestamp).toDate();
-      print('Settings loaded: collectionName=${_collectionNameController.text}, startDate=$_startDate');
     } else {
       _collectionNameController.text = 'FDP_2024';
       _startDate = DateTime.now();
-      print('Using default settings: collectionName=FDP_2024, startDate=$_startDate');
     }
     setState(() {
       _isLoading = false;
@@ -39,15 +39,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveSettings() async {
-    print('Saving settings...');
     await FirebaseFirestore.instance.collection('settings').doc('config').set({
       'collectionName': _collectionNameController.text.trim(),
       'startDate': Timestamp.fromDate(_startDate!),
     }, SetOptions(merge: true));
-    print('Settings saved');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Settings saved')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Settings saved')),
+      );
+    }
   }
 
   Future<void> _selectStartDate(BuildContext context) async {

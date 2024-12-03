@@ -5,7 +5,7 @@ class BarcodeModel {
   final String name;
   final String mail;
   final String phone;
-  final List<String> scanned;
+  final Map<String, List<int>> scanned;
   final Timestamp timestamp;
 
   BarcodeModel({
@@ -24,7 +24,12 @@ class BarcodeModel {
       name: data?['name'] ?? '',
       mail: data?['mail'] ?? '',
       phone: data?['phone'] ?? '',
-      scanned: List<String>.from(data?['scanned'] ?? []),
+      scanned: (data?['scanned'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) => MapEntry(
+          key,
+          (value as List).map((e) => e as int).toList(),
+        ),
+      ),
       timestamp: data?['timestamp'] ?? Timestamp.now(),
     );
   }

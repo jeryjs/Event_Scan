@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'barcode_row.dart';
 import '../models/barcode_model.dart';
+import '../constants/day_colors.dart';
 
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
@@ -25,6 +26,16 @@ class BarcodeList extends StatefulWidget {
 class BarcodeListState extends State<BarcodeList> {
   String searchTerm = '';
 
+  bool _matchesSearch(BarcodeModel barcode) {
+    if (searchTerm.isEmpty) return true;
+    final lowerCaseTerm = searchTerm.toLowerCase();
+    return barcode.code.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.name.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.mail.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.phone.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.timestamp.toDate().toString().contains(lowerCaseTerm);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -43,6 +54,7 @@ class BarcodeListState extends State<BarcodeList> {
             },
           ),
         ),
+        const SizedBox(height: 8),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: widget.stream,
@@ -56,13 +68,10 @@ class BarcodeListState extends State<BarcodeList> {
                 final matchesCategory = widget.category == 'all' || widget.category.isEmpty
                     ? true
                     : widget.isScanned
-                        ? barcode.scanned.contains(widget.category)
-                        : !barcode.scanned.contains(widget.category);
+                        ? barcode.scanned[widget.category]?.isNotEmpty ?? false
+                        : !(barcode.scanned[widget.category]?.isNotEmpty ?? false);
 
-                return matchesCategory &&
-                    barcode.code.isNotEmpty &&
-                    (barcode.code.contains(searchTerm) ||
-                     barcode.timestamp.toDate().toString().contains(searchTerm));
+                return matchesCategory && barcode.code.isNotEmpty && _matchesSearch(barcode);
               }).toList();
 
               final sortedDocs = filteredDocs

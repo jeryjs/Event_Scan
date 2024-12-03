@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../constants/day_colors.dart';
+
 class ResultDialog extends StatefulWidget {
   final Map<String, dynamic>? result;
   final String barcode;
@@ -50,7 +52,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     final mail = widget.result?['mail'] ?? 'Unknown';
     final phone = widget.result?['phone'] ?? 'Unknown';
     final scanned = widget.result?['scanned'] ?? {};
-    final isScanned = scanned.contains(true);
+    final isScanned = scanned[widget.barcode]?.isNotEmpty ?? false;
 
     final alertIcon = isScanned == null
         ? Icons.warning_amber
@@ -90,13 +92,48 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                   Text("Name: $name"),
                   Text("Mail: $mail"),
                   Text("Phone: $phone"),
-                  Text("Scanned Categories: ${scanned.where((item) => item == true).join(', ')}"),
+                  const SizedBox(height: 8),
+                  _buildScannedDays(scanned),
                 ],
               ),
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildScannedDays(Map<String, dynamic> scanned) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: scanned.entries.map((entry) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: entry.value.map<Widget>((day) {
+            final dayColor = dayColors[day] ?? Colors.grey;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    color: dayColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${entry.key} - Day $day',
+                    style: TextStyle(
+                      color: dayColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      }).toList(),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../constants/day_colors.dart';
 import '../models/barcode_model.dart';
 import '../constants/category_icons.dart';
 
@@ -102,25 +103,42 @@ class BarcodeRow extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: barcode.scanned.asMap().entries.map((entry) {
-          final categoryIcon = getCategoryIcon(entry.key);
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Tooltip(
-              message: entry.value,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: categoryIcon.color.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
+        children: barcode.scanned.entries.indexed.map((entry) {
+          final categoryIcon = getCategoryIcon(entry.$1);
+          return Row(
+            children: entry.$2.value.map((day) {
+              final dayColor = dayColors[day] ?? Colors.grey;
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: '${entry.$2.key} - Day $day',
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: dayColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          categoryIcon.icon,
+                          size: 16,
+                          color: dayColor,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Day $day',
+                          style: TextStyle(
+                            color: dayColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  categoryIcon.icon,
-                  size: 16,
-                  color: categoryIcon.color,
-                ),
-              ),
-            ),
+              );
+            }).toList(),
           );
         }).toList(),
       ),
@@ -220,12 +238,13 @@ class BarcodeRow extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: barcode.scanned.asMap().entries.map((entry) {
-        final categoryIcon = getCategoryIcon(entry.key);
+      children: barcode.scanned.entries.indexed.map((entry) {
+        final categoryIcon = getCategoryIcon(entry.$1);
+        final dayColor = dayColors[entry.$1+1] ?? Colors.grey;
         return Chip(
-          avatar: Icon(categoryIcon.icon, color: categoryIcon.color),
-          label: Text(entry.value),
-          backgroundColor: categoryIcon.color.withOpacity(0.1),
+          avatar: Icon(categoryIcon.icon, color: dayColor),
+          label: Text(entry.$2.key),
+          backgroundColor: dayColor.withOpacity(0.1),
         );
       }).toList(),
     );
