@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ResultDialog extends StatefulWidget {
-  final bool? isScanned;
+  final Map<String, dynamic>? result;
   final String barcode;
   final VoidCallback onDismissed;
 
   const ResultDialog({
     super.key,
-    required this.isScanned,
+    required this.result,
     required this.barcode,
-    required this.onDismissed
+    required this.onDismissed,
   });
 
   @override
@@ -27,9 +27,9 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
-      end: widget.isScanned == null
+      end: widget.result?['isScanned'] == null
           ? Colors.amber[800]
-          : widget.isScanned!
+          : widget.result?['isScanned']
               ? Colors.red
               : Colors.green,
     ).animate(_controller);
@@ -45,14 +45,21 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final alertIcon = widget.isScanned == null
+    final name = widget.result?['name'] ?? 'Unknown';
+    final code = widget.result?['code'] ?? 'Unknown';
+    final mail = widget.result?['mail'] ?? 'Unknown';
+    final phone = widget.result?['phone'] ?? 'Unknown';
+    final scanned = widget.result?['scanned'] ?? {};
+    final isScanned = scanned.contains(true);
+
+    final alertIcon = isScanned == null
         ? Icons.warning_amber
-        : widget.isScanned!
+        : isScanned
             ? Icons.close
             : Icons.check;
-    final alertTitle = widget.isScanned == null
+    final alertTitle = isScanned == null
         ? "Unknown Barcode"
-        : widget.isScanned!
+        : isScanned
             ? "Already Scanned!"
             : "Scan Successful!";
 
@@ -79,7 +86,11 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                       Text(alertTitle, style: const TextStyle(color: Colors.white, fontSize: 26)),
                     ],
                   ),
-                  Text(widget.barcode),
+                  Text("Code: $code"),
+                  Text("Name: $name"),
+                  Text("Mail: $mail"),
+                  Text("Phone: $phone"),
+                  Text("Scanned Categories: ${scanned.where((item) => item == true).join(', ')}"),
                 ],
               ),
             );

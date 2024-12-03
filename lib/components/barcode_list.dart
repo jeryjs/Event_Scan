@@ -1,17 +1,27 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:party_scan/components/barcode_row.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'barcode_row.dart';
+import '../models/barcode_model.dart';
 
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
   final ScrollController scrollController;
-  const BarcodeList({required this.stream, required this.scrollController});
+  final String category;
+  final bool isScanned;
+
+  const BarcodeList({
+    super.key,
+    required this.stream,
+    required this.scrollController,
+    required this.category,
+    required this.isScanned,
+  });
 
   @override
-  _BarcodeListState createState() => _BarcodeListState();
+  BarcodeListState createState() => BarcodeListState();
 }
 
-class _BarcodeListState extends State<BarcodeList> {
+class BarcodeListState extends State<BarcodeList> {
   String searchTerm = '';
 
   @override
@@ -21,7 +31,7 @@ class _BarcodeListState extends State<BarcodeList> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Search by time or code',
               prefixIcon: Icon(Icons.search),
             ),
@@ -37,20 +47,33 @@ class _BarcodeListState extends State<BarcodeList> {
             stream: widget.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
               final docs = snapshot.data!.docs;
               final filteredDocs = docs.where((doc) {
-                return doc.id.contains(searchTerm) ||
-                    doc['timestamp'].toDate().toString().contains(searchTerm);
+                var barcode = BarcodeModel.fromDocument(doc);
+                final matchesCategory = widget.category == 'all' || widget.category.isEmpty
+                    ? true
+                    : widget.isScanned
+                        ? barcode.scanned.contains(widget.category)
+                        : !barcode.scanned.contains(widget.category);
+
+                return matchesCategory &&
+                    (barcode.code.contains(searchTerm) ||
+                     barcode.timestamp.toDate().toString().contains(searchTerm));
               }).toList();
+
+              final sortedDocs = filteredDocs
+                ..sort((a, b) => (b['timestamp'] as Timestamp)
+                    .compareTo(a['timestamp'] as Timestamp));
 
               return ListView.builder(
                 controller: widget.scrollController,
-                itemCount: filteredDocs.length,
+                itemCount: sortedDocs.length,
                 itemBuilder: (context, index) {
-                  var doc = filteredDocs[index];
-                  return BarcodeRow(document: doc);
+                  var doc = sortedDocs[index];
+                  final barcode = BarcodeModel.fromDocument(doc);
+                  return BarcodeRow(barcode: barcode);
                 },
               );
             },

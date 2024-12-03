@@ -32,8 +32,18 @@ class DraggableSheet extends StatelessWidget {
             ),
             body: TabBarView(
               children: [
-                BarcodeList(stream: Database.getScannedBarcodes(collection), scrollController: scrollController),
-                BarcodeList(stream: Database.getPendingBarcodes(collection), scrollController: scrollController),
+                BarcodeList(
+                  stream: Database.getBarcodes(category: collection, isScanned: true),
+                  scrollController: scrollController,
+                  category: collection,
+                  isScanned: true,
+                ),
+                BarcodeList(
+                  stream: Database.getBarcodes(category: collection, isScanned: false),
+                  scrollController: scrollController,
+                  category: collection,
+                  isScanned: false,
+                ),
               ],
             ),
           ),
