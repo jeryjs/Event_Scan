@@ -30,7 +30,9 @@ class Database {
 
     if (doc.exists) {
       var data = doc.data() as Map<String, dynamic>;
-      var scanned = Map<String, List<int>>.from(data['scanned'] ?? {});
+      var scanned = (data['scanned'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
+      );
       final isScanned = scanned[category]?.contains(currentDay) ?? false;
 
       if (!isScanned) {
@@ -47,6 +49,7 @@ class Database {
         'mail': data['mail'],
         'phone': data['phone'],
         'scanned': scanned,
+        'isScanned': isScanned,
       };
     }
     return null;

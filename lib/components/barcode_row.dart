@@ -127,7 +127,7 @@ class BarcodeRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          'Day $day',
+                          '$day',
                           style: TextStyle(
                             color: dayColor,
                             fontWeight: FontWeight.bold,
@@ -171,10 +171,7 @@ class BarcodeRow extends StatelessWidget {
                     const Divider(height: 32),
                     _buildDetailRow(Icons.email, barcode.mail),
                     _buildDetailRow(Icons.phone, barcode.phone),
-                    _buildDetailRow(
-                      Icons.access_time,
-                      barcode.timestamp.toDate().toString(),
-                    ),
+                    _buildDetailRow(Icons.access_time, barcode.timestamp.toDate().toString()),
                     const SizedBox(height: 16),
                     _buildScannedCategories(context),
                   ],
@@ -239,11 +236,11 @@ class BarcodeRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: barcode.scanned.entries.indexed.map((entry) {
-        final categoryIcon = getCategoryIcon(entry.$1);
+        final categoryIcon = getCategoryIconByName(entry.$2.key);
         final dayColor = dayColors[entry.$1+1] ?? Colors.grey;
         return Chip(
           avatar: Icon(categoryIcon.icon, color: dayColor),
-          label: Text(entry.$2.key),
+          label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
           backgroundColor: dayColor.withOpacity(0.1),
         );
       }).toList(),

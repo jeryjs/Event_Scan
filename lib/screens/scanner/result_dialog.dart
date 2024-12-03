@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:party_scan/constants/category_icons.dart';
 
+import '../../components/edit_user_dialog.dart';
 import '../../constants/day_colors.dart';
 
 class ResultDialog extends StatefulWidget {
@@ -52,7 +55,17 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     final mail = widget.result?['mail'] ?? 'Unknown';
     final phone = widget.result?['phone'] ?? 'Unknown';
     final scanned = widget.result?['scanned'] ?? {};
-    final isScanned = scanned[widget.barcode]?.isNotEmpty ?? false;
+    final isScanned = widget.result?['isScanned'];
+
+    // Show edit dialog if name is empty
+    if (name == 'Unknown') {
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          builder: (context) => EditUserDialog(data: widget.result ?? {}),
+        );
+      });
+    }
 
     final alertIcon = isScanned == null
         ? Icons.warning_amber
@@ -104,36 +117,36 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
   }
 
   Widget _buildScannedDays(Map<String, dynamic> scanned) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: scanned.entries.map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: entry.value.map<Widget>((day) {
-            final dayColor = dayColors[day] ?? Colors.grey;
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    color: dayColor,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '${entry.key} - Day $day',
-                    style: TextStyle(
-                      color: dayColor,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Scanned Days:',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...scanned.entries.indexed.map((entry) {
+            final categoryIcon = getCategoryIconByName(entry.$2.key);
+            final dayColor = dayColors[entry.$1] ?? Colors.grey;
+            return Chip(
+              avatar: Icon(categoryIcon.icon, color: dayColor),
+              label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
+              backgroundColor: dayColor.withOpacity(0.1),
             );
-          }).toList(),
-        );
-      }).toList(),
+          }),
+        ],
+      ),
     );
   }
 }

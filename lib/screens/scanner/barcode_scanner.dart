@@ -22,7 +22,7 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
   void _onBarcodeScanned(String barcode) async {
     var result = await Database.checkBarcode(barcode, widget.category);
 
-    if (result == null || result.isEmpty) {
+    if (result == null || result.isEmpty || result['isScanned']) {
       SoundManager.playFailureSound();
     } else {
       SoundManager.playSuccessSound();

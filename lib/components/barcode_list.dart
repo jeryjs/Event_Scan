@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'barcode_row.dart';
 import '../models/barcode_model.dart';
-import '../constants/day_colors.dart';
 
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
