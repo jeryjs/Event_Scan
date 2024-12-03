@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_scan/constants/category_icons.dart';
 import 'package:party_scan/services/database.dart';
 
 import '../scanner/scanner_view.dart';
@@ -56,7 +57,8 @@ class _CategoryCard extends StatefulWidget {
   State<_CategoryCard> createState() => _CategoryCardState();
 }
 
-class _CategoryCardState extends State<_CategoryCard> with SingleTickerProviderStateMixin {
+class _CategoryCardState extends State<_CategoryCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
 
@@ -115,7 +117,9 @@ class _CategoryCardState extends State<_CategoryCard> with SingleTickerProviderS
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.category,
+                widget.index < 6
+                    ? getCategoryIcon(widget.index).icon
+                    : Icons.category,
                 size: 40,
                 color: Colors.white.withOpacity(0.9),
               ),
