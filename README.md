@@ -1,8 +1,8 @@
 <img src="assets/launcher_icons/ic_launcher.jpg" width=100>
 
-# Party Scan 🎉
+# Event Scan 🎉
 
-Party Scan is a modern Flutter-based app designed to streamline barcode scanning at events like freshers' parties. It ensures smooth and efficient entry management using Firestore databse by checking whether tickets have been scanned before and provides real-time feedback to users.
+Event Scan is a modern Flutter-based app designed to streamline barcode scanning at events like freshers' parties. It ensures smooth and efficient entry management using Firestore databse by checking whether tickets have been scanned before and provides real-time feedback to users.
 
 ## Features ✨
 

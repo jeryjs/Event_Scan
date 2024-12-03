@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Party Scan',
+      title: 'Event Scan',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.blue,
