@@ -168,4 +168,12 @@ class Database {
   static Stream<DocumentSnapshot> getSettingsStream() {
     return _firestore.collection('settings').doc('config').snapshots();
   }
+
+  static void updateUser(id, String name, String mail, String phone) async {
+    return _firestore.collection(await _getCollection()).doc(id).update({
+      'name': name,
+      'mail': mail,
+      'phone': phone,
+    });
+  }
 }

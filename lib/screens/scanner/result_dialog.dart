@@ -54,7 +54,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     final code = widget.result?['code'] ?? 'Unknown';
     final mail = widget.result?['mail'] ?? 'Unknown';
     final phone = widget.result?['phone'] ?? 'Unknown';
-    final scanned = widget.result?['scanned'] ?? {};
+    final scanned = Map<String, dynamic>.from(widget.result?['scanned'] ?? {});
     final isScanned = widget.result?['isScanned'];
 
     // Show edit dialog if name is empty
