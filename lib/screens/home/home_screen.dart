@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:party_scan/screens/dashboard/dashboard_screen.dart';
 
 import './categories_grid.dart';
 import 'day_header.dart';
 import '../settings/settings_screen.dart';
-import '../home/report_screen.dart';
 import '../../services/database.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -111,12 +111,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                     ),
                     _buildBottomButton(
                       context,
-                      icon: Icons.report,
-                      label: 'Report',
+                      icon: Icons.dashboard,
+                      label: 'Dashboard',
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const ReportScreen()),
+                            builder: (context) => const DashboardScreen()),
                       ),
                     ),
                   ],

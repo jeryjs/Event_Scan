@@ -169,11 +169,16 @@ class Database {
     return _firestore.collection('settings').doc('config').snapshots();
   }
 
-  static void updateUser(id, String name, String mail, String phone) async {
+  static Future<void> updateUser(id, String name, String mail, String phone) async {
     return _firestore.collection(await _getCollection()).doc(id).update({
       'name': name,
       'mail': mail,
       'phone': phone,
     });
+  }
+
+  static Future<QuerySnapshot> getUsers() async {
+    final collection = await _getCollection();
+    return _firestore.collection(collection).get();
   }
 }

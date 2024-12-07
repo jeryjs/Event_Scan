@@ -11,7 +11,7 @@ class DayHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top + 20,
+        top: MediaQuery.of(context).padding.top + 40,
         bottom: 20,
       ),
       child: ClipRRect(

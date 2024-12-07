@@ -25,5 +25,8 @@ CategoryIcon getCategoryIcon(int index) {
 }
 
 CategoryIcon getCategoryIconByName(String name) {
-  return defaultCategoryIcons.firstWhere((e) => e.name == name, orElse: () => const CategoryIcon(Icons.category, Colors.grey, "Unknown"));
+  return defaultCategoryIcons.firstWhere(
+    (e) => e.name == name,
+    orElse: () => CategoryIcon(Icons.category, Colors.grey, name),
+  );
 }

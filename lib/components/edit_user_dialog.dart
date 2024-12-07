@@ -1,137 +1,215 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:party_scan/services/database.dart';
+import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
-  final Map<String, dynamic> data;
+  final List<Map<String, dynamic>> usersData;
 
-  const EditUserDialog({super.key, required this.data});
+  const EditUserDialog({super.key, required this.usersData});
 
   @override
   State<EditUserDialog> createState() => _EditUserDialogState();
 }
 
-class _EditUserDialogState extends State<EditUserDialog> {
-  late TextEditingController _nameController;
-  late TextEditingController _mailController;
-  late TextEditingController _phoneController;
+dynamic _customEncoder(dynamic item) {
+  if (item is Timestamp) {
+    return item.toDate().toIso8601String();
+  }
+  return item;
+}
+
+class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStateMixin {
+  late TabController _tabController;
+  late List<Map<String, dynamic>> _usersData;
+  bool _isJsonMode = false;
+  late TextEditingController _jsonController;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.data['name']);
-    _mailController = TextEditingController(text: widget.data['mail']);
-    _phoneController = TextEditingController(text: widget.data['phone']);
+    _usersData = widget.usersData;
+    _tabController = TabController(length: _usersData.length, vsync: this);
+    _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
+  }
+
+  void _toggleMode() {
+    setState(() {
+      _isJsonMode = !_isJsonMode;
+      if (_isJsonMode) {
+        _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder);
+      } else {
+        try {
+          _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
+          _tabController = TabController(length: _usersData.length, vsync: this);
+        } catch (_) {
+          // Handle JSON parse error if needed
+        }
+      }
+    });
   }
 
   Future<void> _saveChanges() async {
-    final name = _nameController.text;
-    final mail = _mailController.text;
-    final phone = _phoneController.text;
-
-    Database.updateUser(widget.data['code'], name, mail, phone);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('User updated successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    Navigator.of(context).pop();
+    if (_isJsonMode) {
+      try {
+        _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
+      } catch (_) {
+        // Handle JSON parse error if needed
+      }
+    }
+    for (var userData in _usersData) {
+      await Database.updateUser(
+        userData['code'],
+        userData['name'],
+        userData['mail'],
+        userData['phone'],
+      );
+    }
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: const Text(
-        'Edit User',
-        style: TextStyle(fontWeight: FontWeight.bold),
-        textAlign: TextAlign.center,
-      ),
-      content: SingleChildScrollView(
+    return Dialog(
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(8),
-                gradient: RadialGradient(colors: [Colors.blue.withOpacity(0.1), Colors.blue.withOpacity(0.2)]),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.qr_code, color: Colors.grey),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Code: ${widget.data['code']}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Edit Users', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: Icon(_isJsonMode ? Icons.view_compact : Icons.code),
+                  onPressed: _toggleMode,
+                ),
+              ],
+            ),
+            SizedBox(
+              height: 500,
+              child: _isJsonMode
+                  ? TextField(
+                      controller: _jsonController,
+                      maxLines: 15,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter JSON data here',
+                        border: OutlineInputBorder(),
                       ),
+                    )
+                  : Column(
+                      children: [
+                        TabBar(
+                          controller: _tabController,
+                          isScrollable: true,
+                          tabs: List.generate(_usersData.length, (index) => Tab(text: 'User ${index + 1}')),
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            controller: _tabController,
+                            children: _usersData.map((userData) {
+                              int userIndex = _usersData.indexOf(userData);
+                              return Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    if (userData['code'] != null && userData['code'] != '')
+                                      Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            const Icon(Icons.qr_code, color: Colors.grey),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'Code: ${userData['code']}',
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    const SizedBox(height: 16),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['name'] = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Name',
+                                        prefixIcon: const Icon(Icons.person),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      controller: TextEditingController(text: userData['name']),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['mail'] = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Email',
+                                        prefixIcon: const Icon(Icons.email),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      controller: TextEditingController(text: userData['mail']),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['phone'] = value;
+                                        });
+                                      },
+                                      decoration: const InputDecoration(
+                                        labelText: 'Phone',
+                                        prefixIcon: Icon(Icons.phone),
+                                      ),
+                                      controller: TextEditingController(text: userData['phone']),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _nameController,
-              decoration: InputDecoration(
-                labelText: 'Name',
-                prefixIcon: const Icon(Icons.person),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel'),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _mailController,
-              decoration: InputDecoration(
-                labelText: 'Email',
-                prefixIcon: const Icon(Icons.email),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                ElevatedButton.icon(
+                  onPressed: _saveChanges,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save'),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _phoneController,
-              decoration: InputDecoration(
-                labelText: 'Phone',
-                prefixIcon: const Icon(Icons.phone),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              ],
             ),
           ],
         ),
       ),
-      actions: [
-        TextButton.icon(
-          onPressed: () => Navigator.of(context).pop(),
-          icon: const Icon(Icons.cancel),
-          label: const Text('Cancel'),
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.grey,
-          ),
-        ),
-        ElevatedButton.icon(
-          onPressed: _saveChanges,
-          icon: const Icon(Icons.save),
-          label: const Text('Save'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Theme.of(context).primaryColor,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          ),
-        ),
-      ],
     );
   }
+}
+
+void showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData) {
+  showDialog(
+    context: context,
+    builder: (context) => EditUserDialog(usersData: usersData),
+  );
 }
