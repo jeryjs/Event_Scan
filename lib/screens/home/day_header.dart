@@ -112,6 +112,7 @@ class EventTitle extends StatelessWidget {
           opacity: value,
           child: const Text(
             'Faculty Development Program',
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,

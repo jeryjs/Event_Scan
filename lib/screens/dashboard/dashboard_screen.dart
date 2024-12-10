@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import '../../components/custom_step_slider.dart';
 import '../../components/edit_user_dialog.dart';
 import '../../constants/category_icons.dart';
 import 'manage_users_screen.dart';
@@ -18,12 +18,38 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   late TabController _tabController;
   List<Map<String, dynamic>> _users = [];
   bool _isLoading = true;
+  int _selectedDay = 0; // 0 represents 'All' days
+  late List<String> _dayOptions;
+  final Map<String, int> _categoryCounts = {};
+  late AnimationController _initialAnimationController;
+  late Animation<double> _initialAnimation;
+  bool _hasAnimated = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _initialAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _initialAnimation = CurvedAnimation(
+      parent: _initialAnimationController,
+      curve: Curves.easeOut,
+    );
+    _initializeDayOptions();
     _loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _initialAnimationController.dispose();
+    super.dispose();
+  }
+
+  void _initializeDayOptions() {
+    // Assuming maximum of 7 days
+    _dayOptions = ['All', '1', '2', '3', '4', '5'];
   }
 
   Future<void> _loadUsers() async {
@@ -33,12 +59,41 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       _users = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
       _isLoading = false;
     });
+    _updateCategoryCounts();
+    if (!_hasAnimated) {
+      _initialAnimationController.forward();
+      _hasAnimated = true;
+    }
+  }
+
+  void _updateCategoryCounts() {
+    _categoryCounts.clear();
+    // Initialize all category counts to zero
+    for (var categoryIcon in defaultCategoryIcons) {
+      _categoryCounts[categoryIcon.name!] = 0;
+    }
+    for (var user in _users) {
+      var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+      for (var entry in scanned.entries) {
+        var category = entry.key;
+        var days = List<int>.from(entry.value ?? []);
+        if (_selectedDay == 0 || days.contains(_selectedDay)) {
+          _categoryCounts[category] = (_categoryCounts[category] ?? 0) + 1;
+        }
+      }
+    }
+  }
+
+  void _onDaySelected(int index) {
+    setState(() {
+      _selectedDay = index;
+      _updateCategoryCounts();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Fancy AppBar with gradient
       appBar: AppBar(
         title: const Text('Dashboard'),
         flexibleSpace: Container(
@@ -46,20 +101,51 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
             gradient: LinearGradient(colors: [Colors.indigo, Colors.blueAccent]),
           ),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
-            Tab(icon: Icon(Icons.bar_chart), text: 'Reports'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(150.0),
+          child: Column(
+            children: [
+              _buildDaySlider(),
+              TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.dashboard), text: 'Dashboard'),
+                  Tab(icon: Icon(Icons.bar_chart), text: 'Reports'),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
           _buildDashboardTab(),
-          ReportScreen(users: _users),
+          ReportScreen(users: _users, selectedDay: _selectedDay),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDaySlider() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: CustomStepSlider(
+        values: _dayOptions,
+        selectedValue: _dayOptions[_selectedDay],
+        onValueSelected: (value) => _onDaySelected(_dayOptions.indexOf(value)),
+        thumbColor: Colors.white.withOpacity(0.2),
+        activeTextColor: Colors.white,
+        inactiveTextColor: Colors.white70,
+        containerHeight: 80.0,
+        thumbSize: 55.0,
+        activeFontSize: 24.0,
+        inactiveFontSize: 16.0,
+        sliderDecoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        thumbCorrection: const EdgeInsets.only(left: -10, right: -20),
       ),
     );
   }
@@ -71,43 +157,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           // Stats Cards
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: _isLoading ? _buildShimmerStatsCards() : _buildStatsCards(),
+            child: _buildStatsCards(),
           ),
           // Action Buttons
           _buildActionButtons(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildShimmerStatsCards() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      padding: const EdgeInsets.all(16.0),
-      childAspectRatio: 1.3,
-      mainAxisSpacing: 16.0,
-      crossAxisSpacing: 16.0,
-      children: List.generate(4, (index) => _buildShimmerCard()),
-    );
-  }
-
-  Widget _buildShimmerCard() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
-      child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Container(
-          width: 150,
-          height: 150,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
       ),
     );
   }
@@ -122,32 +176,52 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       mainAxisSpacing: 16.0,
       crossAxisSpacing: 16.0,
       children: [
-        _buildStatCard('Total Users', _users.length.toString(), Icons.people, Colors.orange),
-        _buildStatCard('Active Today', _calculateActiveUsers().toString(), Icons.person_add, Colors.green),
+        _buildAnimatedStatCard(
+            'Total Users',
+            _selectedDay == 0
+                ? _calculateTotalUsers()
+                : _calculateActiveUsers(),
+            Icons.people, Colors.green),
         ..._buildCategoryStats(),
       ],
     );
   }
 
   List<Widget> _buildCategoryStats() {
-    if (_users.isEmpty) return [];
-    
-    return (_users.first['scanned']?.keys as Iterable<dynamic>?)
-          ?.where((category) => category != 'High Tea')
-          .map<Widget>((category) {
-            final categoryIcon = getCategoryIconByName(category.toString());
-            int count = _users.where((user) {
-              var scanned = (user['scanned'] as Map<String, dynamic>?)?[category] as List<dynamic>?;
-              return scanned != null && scanned.isNotEmpty;
-            }).length;
-            
-            return _buildStatCard(
-              category.toString(), 
-              count.toString(), 
-              categoryIcon.icon, 
-              categoryIcon.color
-            );
-          }).toList() ?? [];
+    return defaultCategoryIcons.map((categoryIcon) {
+      String category = categoryIcon.name!;
+      int count = _categoryCounts[category] ?? 0;
+      return _buildAnimatedStatCard(
+        category,
+        count,
+        categoryIcon.icon,
+        categoryIcon.color,
+      );
+    }).toList();
+  }
+
+  Widget _buildAnimatedStatCard(String title, int value, IconData icon, Color color) {
+    return AnimatedBuilder(
+      animation: _initialAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 50 * (1 - _initialAnimation.value)),
+          child: Opacity(
+            opacity: _initialAnimation.value,
+            child: Transform.scale(
+              scale: _initialAnimation.value,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween<double>(begin: 0, end: value.toDouble()),
+                duration: const Duration(milliseconds: 500),
+                builder: (context, val, _) {
+                  return _buildStatCard(title, val.toInt().toString(), icon, color);
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
@@ -197,19 +271,29 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     );
   }
 
-  int _calculateActiveUsers() {
-    int activeUsers = 0;
-    final currentDay = DateTime.now().day;
-    for (var user in _users) {
-      var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-      for (var days in scanned.values) {
-        if ((days as List).contains(currentDay)) {
-          activeUsers++;
-          break;
-        }
-      }
+  int _calculateTotalUsers() {
+    if (_selectedDay == 0) {
+      return _users.length;
+    } else {
+      return _users.where((user) {
+        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+        return scanned.values.any((days) => (days as List).contains(_selectedDay));
+      }).length;
     }
-    return activeUsers;
+  }
+
+  int _calculateActiveUsers() {
+    if (_selectedDay == 0) {
+      return _users.where((user) {
+        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+        return scanned.isNotEmpty;
+      }).length;
+    } else {
+      return _users.where((user) {
+        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+        return scanned.values.any((days) => (days as List).contains(_selectedDay));
+      }).length;
+    }
   }
 
   Widget _buildActionButtons() {

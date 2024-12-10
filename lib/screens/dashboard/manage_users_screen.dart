@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:party_scan/services/database.dart';
 import '../../components/edit_user_dialog.dart';
 
 class ManageUsersScreen extends StatelessWidget {
@@ -37,6 +38,27 @@ class ManageUsersScreen extends StatelessWidget {
                     builder: (context) => EditUserDialog(usersData: [user]),
                   );
                 },
+              ),
+              onLongPress: () => showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Delete User'),
+                  content: Text('Are you sure you want to delete ${user['name']}?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Database.deleteUser(user['code']??'');
+                        users.removeAt(index);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Delete'),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

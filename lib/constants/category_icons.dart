@@ -10,11 +10,11 @@ class CategoryIcon {
 
 final defaultCategoryIcons = [
   const CategoryIcon(Icons.app_registration, Colors.blue, "Registration"),
-  const CategoryIcon(Icons.coffee, Colors.brown, "Breakfast"),
+  const CategoryIcon(Icons.coffee, Colors.deepOrange, "Breakfast"),
   const CategoryIcon(Icons.school, Colors.purple, "Morning Class"),
   const CategoryIcon(Icons.restaurant, Colors.orange, "Lunch"),
   const CategoryIcon(Icons.cast_for_education, Colors.indigo, "Afternoon Class"),
-  const CategoryIcon(Icons.local_cafe, Colors.amber, "High Tea"),
+  const CategoryIcon(Icons.local_cafe, Colors.brown, "High Tea"),
 ];
 
 CategoryIcon getCategoryIcon(int index) {

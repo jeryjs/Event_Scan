@@ -7,11 +7,13 @@ class CustomStepSlider extends StatefulWidget {
   final Color? thumbColor;
   final Color? activeTextColor;
   final Color? inactiveTextColor;
+  final double? containerHeight;
   final double? thumbSize;
   final double? activeFontSize;
   final double? inactiveFontSize;
   final Duration animationDuration;
   final BoxDecoration? sliderDecoration;
+  final EdgeInsets thumbCorrection;
 
   const CustomStepSlider({
     super.key,
@@ -21,11 +23,13 @@ class CustomStepSlider extends StatefulWidget {
     this.thumbColor,
     this.activeTextColor,
     this.inactiveTextColor,
+    this.containerHeight,
     this.thumbSize = 60.0,
     this.activeFontSize = 48.0,
     this.inactiveFontSize = 32.0,
     this.animationDuration = const Duration(milliseconds: 300),
     this.sliderDecoration,
+    this.thumbCorrection = const EdgeInsets.only(left: -15.0, right: -15.0, top: 0.0, bottom: 0.0),
   });
 
   @override
@@ -56,10 +60,10 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Container(
-          height: widget.thumbSize! * 2,
+          height: widget.containerHeight ?? widget.thumbSize! * 2,
           decoration: widget.sliderDecoration ?? defaultDecoration,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 50),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
@@ -94,7 +98,8 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
                 
                 // Slider
                 Positioned.fill(
-                  left: -15, right: -15,
+                  top: widget.thumbCorrection.top, bottom: widget.thumbCorrection.bottom,
+                  left: widget.thumbCorrection.left, right: widget.thumbCorrection.right,
                   child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     thumbShape: RoundSliderThumbShape(

@@ -28,7 +28,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _usersData = widget.usersData;
+    _usersData = List<Map<String, dynamic>>.from(widget.usersData);
     _tabController = TabController(length: _usersData.length, vsync: this);
     _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
   }
@@ -46,6 +46,19 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
           // Handle JSON parse error if needed
         }
       }
+    });
+  }
+
+  void _addNewUser() {
+    setState(() {
+      _usersData.add({
+        'code': '',
+        'name': '',
+        'mail': '',
+        'phone': '',
+      });
+      _tabController = TabController(length: _usersData.length, vsync: this);
+      _tabController.animateTo(_usersData.length - 1);
     });
   }
 
@@ -89,7 +102,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
               ],
             ),
             SizedBox(
-              height: 500,
+              height: 400,
               child: _isJsonMode
                   ? TextField(
                       controller: _jsonController,
@@ -101,10 +114,23 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                     )
                   : Column(
                       children: [
-                        TabBar(
-                          controller: _tabController,
-                          isScrollable: true,
-                          tabs: List.generate(_usersData.length, (index) => Tab(text: 'User ${index + 1}')),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TabBar(
+                                controller: _tabController,
+                                isScrollable: true,
+                                tabs: List.generate(_usersData.length, 
+                                  (index) => Tab(text: 'User ${index + 1}')
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.add_circle),
+                              onPressed: _addNewUser,
+                              tooltip: 'Add User',
+                            ),
+                          ],
                         ),
                         Expanded(
                           child: TabBarView(
@@ -115,27 +141,30 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
                                   children: [
-                                    if (userData['code'] != null && userData['code'] != '')
-                                      Container(
-                                        padding: const EdgeInsets.all(12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[200],
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Row(
-                                          children: [
-                                            const Icon(Icons.qr_code, color: Colors.grey),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(
-                                                'Code: ${userData['code']}',
-                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                                              ),
-                                            ),
-                                          ],
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        gradient: LinearGradient(
+                                          colors: [Colors.blue[100]!.withOpacity(0.1), Colors.blue[600]!.withOpacity(0.1)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
                                         ),
                                       ),
-                                    const SizedBox(height: 16),
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.qr_code, color: Colors.grey),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              'Code: ${userData['code']??''}',
+                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 40),
                                     TextField(
                                       onChanged: (value) {
                                         setState(() {
@@ -149,7 +178,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                       ),
                                       controller: TextEditingController(text: userData['name']),
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 20),
                                     TextField(
                                       onChanged: (value) {
                                         setState(() {
@@ -163,7 +192,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                       ),
                                       controller: TextEditingController(text: userData['mail']),
                                     ),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 20),
                                     TextField(
                                       onChanged: (value) {
                                         setState(() {

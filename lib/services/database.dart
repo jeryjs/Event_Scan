@@ -122,6 +122,24 @@ class Database {
     return 1;
   }
 
+  static Future<int> calculateMaxDay() async {
+    // Fetch and calculate the maximum day from the data
+    int maxDay = 1;
+    QuerySnapshot snapshot = await getUsers();
+    for (var doc in snapshot.docs) {
+      var data = doc.data() as Map<String, dynamic>;
+      var scanned = data['scanned'] as Map<String, dynamic>? ?? {};
+      for (var days in scanned.values) {
+        for (var day in days) {
+          if (day > maxDay) {
+            maxDay = day;
+          }
+        }
+      }
+    }
+    return maxDay;
+  }
+
   static Future<List<Map<String, dynamic>>> getCategories() async {
     final collection = await _getCollection();
     var snapshot = await _firestore
@@ -169,16 +187,21 @@ class Database {
     return _firestore.collection('settings').doc('config').snapshots();
   }
 
-  static Future<void> updateUser(id, String name, String mail, String phone) async {
-    return _firestore.collection(await _getCollection()).doc(id).update({
+  static Future<void> updateUser(String code, String name, String mail, String phone) async {
+    return _firestore.collection(await _getCollection()).doc(code).set({
+      'code': code,
       'name': name,
       'mail': mail,
       'phone': phone,
-    });
+    }, SetOptions(merge: true));
   }
 
   static Future<QuerySnapshot> getUsers() async {
     final collection = await _getCollection();
     return _firestore.collection(collection).get();
+  }
+
+  static Future<void> deleteUser(String id) async {
+    return _firestore.collection(await _getCollection()).doc(id).delete();
   }
 }

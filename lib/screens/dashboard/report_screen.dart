@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../components/custom_step_slider.dart';
 import '../../constants/day_colors.dart';
 import '../../constants/category_icons.dart';
 import 'dart:io';
@@ -7,40 +6,22 @@ import 'package:path_provider/path_provider.dart';
 
 class ReportScreen extends StatefulWidget {
   final List<Map<String, dynamic>> users;
+  final int selectedDay; // Accept selectedDay from parent
 
-  const ReportScreen({super.key, required this.users});
+  const ReportScreen({super.key, required this.users, required this.selectedDay});
 
   @override
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
 class _ReportScreenState extends State<ReportScreen> {
-  int _selectedDay = 1;
-  int _maxDay = 1;
   String _selectedCategory = 'All';
   final List<String> _categories = ['All'];
 
   @override
   void initState() {
     super.initState();
-    _calculateMaxDay();
     _loadCategories();
-  }
-
-  void _calculateMaxDay() {
-    for (var user in widget.users) {
-      var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-      for (var days in scanned.values) {
-        for (var day in days) {
-          if (day > _maxDay) {
-            _maxDay = day;
-          }
-        }
-      }
-    }
-    setState(() {
-      _selectedDay = _maxDay;
-    });
   }
 
   void _loadCategories() {
@@ -59,7 +40,7 @@ class _ReportScreenState extends State<ReportScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildDaySlider(),
+        // Remove day slider
         _buildFilterOptions(),
         Expanded(child: _buildReportDataTable()),
         _buildExportButton(),
@@ -94,14 +75,14 @@ class _ReportScreenState extends State<ReportScreen> {
       bool scannedOnDay = false;
       if (_selectedCategory == 'All') {
         for (var days in scanned.values) {
-          if ((days as List).contains(_selectedDay)) {
+          if (widget.selectedDay == 0 || (days as List).contains(widget.selectedDay)) {
             scannedOnDay = true;
             break;
           }
         }
       } else {
         var days = scanned[_selectedCategory] as List<dynamic>? ?? [];
-        scannedOnDay = days.contains(_selectedDay);
+        scannedOnDay = widget.selectedDay == 0 || days.contains(widget.selectedDay);
       }
       return scannedOnDay;
     }).toList();
@@ -135,7 +116,7 @@ class _ReportScreenState extends State<ReportScreen> {
       return DataRow(cells: [
         DataCell(
           CircleAvatar(
-            backgroundColor: (dayColors[_selectedDay % dayColors.length]).withOpacity(0.4),
+            backgroundColor: (dayColors[widget.selectedDay % dayColors.length]).withOpacity(0.4),
             child: Text(codeLast3),
           ),
         ),
@@ -178,14 +159,14 @@ class _ReportScreenState extends State<ReportScreen> {
       bool scannedOnDay = false;
       if (_selectedCategory == 'All') {
         for (var days in scanned.values) {
-          if ((days as List).contains(_selectedDay)) {
+          if (widget.selectedDay == 0 || (days as List).contains(widget.selectedDay)) {
             scannedOnDay = true;
             break;
           }
         }
       } else {
         var days = scanned[_selectedCategory] as List<dynamic>? ?? [];
-        scannedOnDay = days.contains(_selectedDay);
+        scannedOnDay = widget.selectedDay == 0 || days.contains(widget.selectedDay);
       }
       return scannedOnDay;
     }).toList();
@@ -198,7 +179,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
     try {
       final directory = await getTemporaryDirectory();
-      final path = '${directory.path}/report_day_$_selectedDay.csv';
+      final path = '${directory.path}/report_day_${widget.selectedDay}.csv';
       final file = File(path);
       await file.writeAsString(csvData);
     } catch (e) {
@@ -211,23 +192,5 @@ class _ReportScreenState extends State<ReportScreen> {
         );
       }
     }
-  }
-
-  Widget _buildDaySlider() {
-    List<String> dayValues =
-        List.generate(_maxDay, (index) => '${index + 1}');
-
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: CustomStepSlider(
-        values: dayValues,
-        selectedValue: '$_selectedDay',
-        onValueSelected: (value) {
-          setState(() {
-            _selectedDay = int.parse(value);
-          });
-        },
-      ),
-    );
   }
 }
