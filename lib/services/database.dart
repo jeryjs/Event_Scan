@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../models/category_model.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
 class Database {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -140,41 +142,30 @@ class Database {
     return maxDay;
   }
 
-  static Future<List<Map<String, dynamic>>> getCategories() async {
-    final collection = await _getCollection();
-    var snapshot = await _firestore
-        .collection(collection)
-        .doc('categories')
-        .get();
-
+  static Future<List<CategoryModel>> getCategories() async {
+    var snapshot = await _firestore.collection('settings').doc('categories').get();
     if (snapshot.exists) {
       var data = snapshot.data() as Map<String, dynamic>;
-      var categories = List<Map<String, dynamic>>.from(data['categories'] ?? []);
-      return categories;
+      var categoriesData = List<Map<String, dynamic>>.from(data['categories'] ?? []);
+      return categoriesData.map((catData) => CategoryModel.fromMap(catData)).toList();
     }
     return [];
   }
 
-  static Future<void> addCategory(Map<String, dynamic> category) async {
-    final collection = await _getCollection();
+  static Future<void> addCategory(CategoryModel category) async {
     var categories = await getCategories();
     categories.add(category);
-
-    await _firestore
-        .collection(collection)
-        .doc('categories')
-        .set({'categories': categories}, SetOptions(merge: true));
+    await _firestore.collection('settings').doc('categories').set({
+      'categories': categories.map((cat) => cat.toMap()).toList(),
+    }, SetOptions(merge: true));
   }
 
   static Future<void> deleteCategory(String categoryName) async {
-    final collection = await _getCollection();
     var categories = await getCategories();
-    categories.removeWhere((cat) => cat['name'] == categoryName);
-
-    await _firestore
-        .collection(collection)
-        .doc('categories')
-        .set({'categories': categories}, SetOptions(merge: true));
+    categories.removeWhere((cat) => cat.name == categoryName);
+    await _firestore.collection('settings').doc('categories').set({
+      'categories': categories.map((cat) => cat.toMap()).toList(),
+    }, SetOptions(merge: true));
   }
 
   static Future<Stream<QuerySnapshot<Object?>>> getBarcodesStream() async {
@@ -187,11 +178,11 @@ class Database {
     return _firestore.collection('settings').doc('config').snapshots();
   }
 
-  static Future<void> updateUser(String code, String name, String mail, String phone) async {
+  static Future<void> updateUser(String code, String name, String email, String phone) async {
     return _firestore.collection(await _getCollection()).doc(code).set({
       'code': code,
       'name': name,
-      'mail': mail,
+      'email': email,
       'phone': phone,
     }, SetOptions(merge: true));
   }

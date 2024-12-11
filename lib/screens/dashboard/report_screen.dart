@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../constants/day_colors.dart';
-import '../../constants/category_icons.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import '../../models/category_model.dart';
 
 class ReportScreen extends StatefulWidget {
   final List<Map<String, dynamic>> users;
-  final int selectedDay; // Accept selectedDay from parent
+  final int selectedDay;
+  final List<CategoryModel> categories;
 
-  const ReportScreen({super.key, required this.users, required this.selectedDay});
+  const ReportScreen({
+    super.key, 
+    required this.users, 
+    required this.selectedDay,
+    required this.categories,
+  });
 
   @override
   State<ReportScreen> createState() => _ReportScreenState();
@@ -16,31 +22,18 @@ class ReportScreen extends StatefulWidget {
 
 class _ReportScreenState extends State<ReportScreen> {
   String _selectedCategory = 'All';
-  final List<String> _categories = ['All'];
+  late List<String> _categories;
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
-  }
-
-  void _loadCategories() {
-    setState(() {
-      _categories.addAll(
-        widget.users
-            .expand((user) => ((user['scanned'] as Map<String, dynamic>?) ?? {}).keys)
-            .toSet()
-            .toList(),
-      );
-      _categories.sort();
-    });
+    _categories = ['All', ...widget.categories.map((c) => c.name)];
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Remove day slider
         _buildFilterOptions(),
         Expanded(child: _buildReportDataTable()),
         _buildExportButton(),
@@ -126,15 +119,16 @@ class _ReportScreenState extends State<ReportScreen> {
     }).toList();
   }
 
-  Widget _buildCategoryIcons(List<String> categories) {
+  Widget _buildCategoryIcons(List<String> categoryNames) {
     return Row(
-      children: categories.map((category) {
-        var iconData = getCategoryIconByName(category);
+      children: categoryNames.map((name) {
+        CategoryModel category;
+        try { category = widget.categories.firstWhere((cat) => cat.name == name); } catch (e) { return Container(); }
         return Tooltip(
-          message: category,
+          message: name,
           child: Icon(
-            iconData.icon,
-            color: iconData.color,
+            category.icon.data,
+            color: Color(category.colorValue),
           ),
         );
       }).toList(),

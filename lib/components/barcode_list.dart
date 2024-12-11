@@ -30,7 +30,7 @@ class BarcodeListState extends State<BarcodeList> {
     final lowerCaseTerm = searchTerm.toLowerCase();
     return barcode.code.toLowerCase().contains(lowerCaseTerm) ||
            barcode.name.toLowerCase().contains(lowerCaseTerm) ||
-           barcode.mail.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.email.toLowerCase().contains(lowerCaseTerm) ||
            barcode.phone.toLowerCase().contains(lowerCaseTerm) ||
            barcode.timestamp.toDate().toString().contains(lowerCaseTerm);
   }

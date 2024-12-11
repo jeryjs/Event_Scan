@@ -163,7 +163,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         showDialog(
                           context: context,
                           builder: (context) => const ManageCategoriesDialog(),
-                        );
+                        ).then((_) {
+                          setState(() {}); // Refresh settings screen if needed
+                        });
                       },
                     ),
                     const SizedBox(height: 20),

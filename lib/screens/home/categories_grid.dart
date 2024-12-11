@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:party_scan/constants/category_icons.dart';
+import 'package:party_scan/models/category_model.dart';
 import 'package:party_scan/services/database.dart';
 
 import '../scanner/scanner_view.dart';
@@ -9,7 +9,7 @@ class CategoriesGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
+    return FutureBuilder<List<CategoryModel>>(
       future: Database.getCategories(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -32,7 +32,6 @@ class CategoriesGrid extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return _CategoryCard(
                     category: categories[index],
-                    index: index,
                   );
                 },
               );
@@ -45,12 +44,10 @@ class CategoriesGrid extends StatelessWidget {
 }
 
 class _CategoryCard extends StatefulWidget {
-  final Map<String, dynamic> category;
-  final int index;
+  final CategoryModel category;
 
   const _CategoryCard({
     required this.category,
-    required this.index,
   });
 
   @override
@@ -90,7 +87,7 @@ class _CategoryCardState extends State<_CategoryCard>
           context,
           MaterialPageRoute(
             builder: (context) => ScannerView(
-              category: widget.category['name'],
+              category: widget.category.name,
             ),
           ),
         ),
@@ -98,8 +95,8 @@ class _CategoryCardState extends State<_CategoryCard>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Colors.blue[100]!.withOpacity(0.1),
-                Colors.blue[600]!.withOpacity(0.1),
+                Color(widget.category.colorValue).withOpacity(0.1),
+                Color(widget.category.colorValue).withOpacity(0.2),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -117,15 +114,13 @@ class _CategoryCardState extends State<_CategoryCard>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                widget.index < 6
-                    ? getCategoryIcon(widget.index).icon
-                    : Icons.category,
+                widget.category.icon.data,
                 size: 40,
                 color: Colors.white.withOpacity(0.9),
               ),
               const SizedBox(height: 8),
               Text(
-                widget.category['name'],
+                widget.category.name,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

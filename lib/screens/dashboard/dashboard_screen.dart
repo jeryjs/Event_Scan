@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../components/custom_step_slider.dart';
 import '../../components/edit_user_dialog.dart';
-import '../../constants/category_icons.dart';
 import 'manage_users_screen.dart';
 import 'report_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/database.dart';
+import '../../models/category_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -24,6 +24,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   late AnimationController _initialAnimationController;
   late Animation<double> _initialAnimation;
   bool _hasAnimated = false;
+  List<CategoryModel> _categories = [];
 
   @override
   void initState() {
@@ -38,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       curve: Curves.easeOut,
     );
     _initializeDayOptions();
-    _loadUsers();
+    _loadData();
   }
 
   @override
@@ -50,6 +51,12 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void _initializeDayOptions() {
     // Assuming maximum of 7 days
     _dayOptions = ['All', '1', '2', '3', '4', '5'];
+  }
+
+  Future<void> _loadData() async {
+    _categories = await Database.getCategories();
+    await _loadUsers();
+    setState(() => _isLoading = false);
   }
 
   Future<void> _loadUsers() async {
@@ -69,8 +76,8 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void _updateCategoryCounts() {
     _categoryCounts.clear();
     // Initialize all category counts to zero
-    for (var categoryIcon in defaultCategoryIcons) {
-      _categoryCounts[categoryIcon.name!] = 0;
+    for (var category in _categories) {
+      _categoryCounts[category.name] = 0;
     }
     for (var user in _users) {
       var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
@@ -121,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         controller: _tabController,
         children: [
           _buildDashboardTab(),
-          ReportScreen(users: _users, selectedDay: _selectedDay),
+          ReportScreen(users: _users, selectedDay: _selectedDay, categories: _categories),
         ],
       ),
     );
@@ -188,14 +195,13 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   List<Widget> _buildCategoryStats() {
-    return defaultCategoryIcons.map((categoryIcon) {
-      String category = categoryIcon.name!;
-      int count = _categoryCounts[category] ?? 0;
+    return _categories.map((category) {
+      int count = _categoryCounts[category.name] ?? 0;
       return _buildAnimatedStatCard(
-        category,
+        category.name,
         count,
-        categoryIcon.icon,
-        categoryIcon.color,
+        category.icon.data,
+        Color(category.colorValue),
       );
     }).toList();
   }

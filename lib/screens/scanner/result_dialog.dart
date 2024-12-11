@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:party_scan/constants/category_icons.dart';
+import '../../models/category_model.dart';
 
 import '../../components/edit_user_dialog.dart';
 import '../../constants/day_colors.dart';
+import '../../services/database.dart';
 
 class ResultDialog extends StatefulWidget {
   final Map<String, dynamic>? result;
   final String barcode;
   final VoidCallback onDismissed;
+  final List<CategoryModel>? categories; // Optional: pass categories if available
 
   const ResultDialog({
     super.key,
     required this.result,
     required this.barcode,
     required this.onDismissed,
+    this.categories,
   });
 
   @override
@@ -25,6 +28,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
   late Animation<double> _scaleAnimation;
+  List<CategoryModel>? _categories;
 
   @override
   void initState() {
@@ -40,6 +44,16 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     ).animate(_controller);
     _scaleAnimation = CurvedAnimation(parent: _controller, curve: Curves.elasticOut);
     _controller.forward();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    if (widget.categories != null) {
+      _categories = widget.categories;
+    } else {
+      _categories = await Database.getCategories();
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -117,6 +131,8 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
   }
 
   Widget _buildScannedDays(Map<String, dynamic> scanned) {
+    if (_categories == null) return const CircularProgressIndicator();
+
     return Container(
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
@@ -137,10 +153,11 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
           ),
           const SizedBox(height: 8),
           ...scanned.entries.indexed.map((entry) {
-            final categoryIcon = getCategoryIconByName(entry.$2.key);
+            CategoryModel category;
+            try { category = _categories!.firstWhere((cat) => cat.name == entry.$2.key); } catch (e) { return Container(); }
             final dayColor = dayColors[entry.$1] ?? Colors.grey;
             return Chip(
-              avatar: Icon(categoryIcon.icon, color: dayColor),
+              avatar: Icon(category.icon.data, color: dayColor),
               label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
               backgroundColor: dayColor.withOpacity(0.1),
             );

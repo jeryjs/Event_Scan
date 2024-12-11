@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class BarcodeModel {
   final String code;
   final String name;
-  final String mail;
+  final String email;
   final String phone;
   final Map<String, List<int>> scanned;
   final Timestamp timestamp;
@@ -11,7 +11,7 @@ class BarcodeModel {
   BarcodeModel({
     required this.code,
     required this.name,
-    required this.mail,
+    required this.email,
     required this.phone,
     required this.scanned,
     required this.timestamp,
@@ -22,7 +22,7 @@ class BarcodeModel {
     return BarcodeModel(
       code: data?['code'] ?? '',
       name: data?['name'] ?? '',
-      mail: data?['mail'] ?? '',
+      email: data?['email'] ?? '',
       phone: data?['phone'] ?? '',
       scanned: (data?['scanned'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(
@@ -38,7 +38,7 @@ class BarcodeModel {
     return {
       'code': code,
       'name': name,
-      'mail': mail,
+      'email': email,
       'phone': phone,
       'scanned': scanned,
       'timestamp': timestamp,
