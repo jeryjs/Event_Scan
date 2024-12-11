@@ -3,12 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import 'barcode_row.dart';
 import '../models/barcode_model.dart';
+import '../models/category_model.dart';
 
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
   final ScrollController scrollController;
   final String category;
   final bool isScanned;
+  final List<CategoryModel> categories;
 
   const BarcodeList({
     super.key,
@@ -16,6 +18,7 @@ class BarcodeList extends StatefulWidget {
     required this.scrollController,
     required this.category,
     required this.isScanned,
+    required this.categories,
   });
 
   @override
@@ -86,7 +89,7 @@ class BarcodeListState extends State<BarcodeList> {
                 itemBuilder: (context, index) {
                   var doc = sortedDocs[index];
                   final barcode = BarcodeModel.fromDocument(doc);
-                  return BarcodeRow(barcode: barcode);
+                  return BarcodeRow(barcode: barcode, categories: widget.categories);
                 },
               );
             },

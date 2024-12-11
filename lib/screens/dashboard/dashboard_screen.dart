@@ -8,7 +8,8 @@ import '../../services/database.dart';
 import '../../models/category_model.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final List<CategoryModel> categories;
+  const DashboardScreen({super.key, required this.categories});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -24,7 +25,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   late AnimationController _initialAnimationController;
   late Animation<double> _initialAnimation;
   bool _hasAnimated = false;
-  List<CategoryModel> _categories = [];
 
   @override
   void initState() {
@@ -54,7 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   Future<void> _loadData() async {
-    _categories = await Database.getCategories();
     await _loadUsers();
     setState(() => _isLoading = false);
   }
@@ -76,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   void _updateCategoryCounts() {
     _categoryCounts.clear();
     // Initialize all category counts to zero
-    for (var category in _categories) {
+    for (var category in widget.categories) {
       _categoryCounts[category.name] = 0;
     }
     for (var user in _users) {
@@ -128,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         controller: _tabController,
         children: [
           _buildDashboardTab(),
-          ReportScreen(users: _users, selectedDay: _selectedDay, categories: _categories),
+          ReportScreen(users: _users, selectedDay: _selectedDay, categories: widget.categories),
         ],
       ),
     );
@@ -195,7 +194,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   List<Widget> _buildCategoryStats() {
-    return _categories.map((category) {
+    return widget.categories.map((category) {
       int count = _categoryCounts[category.name] ?? 0;
       return _buildAnimatedStatCard(
         category.name,

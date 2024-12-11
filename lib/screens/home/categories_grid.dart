@@ -1,53 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:party_scan/models/category_model.dart';
-import 'package:party_scan/services/database.dart';
-
 import '../scanner/scanner_view.dart';
 
 class CategoriesGrid extends StatelessWidget {
-  const CategoriesGrid({super.key});
+  final List<CategoryModel> categories;
+
+  const CategoriesGrid({super.key, required this.categories});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<CategoryModel>>(
-      future: Database.getCategories(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final categories = snapshot.data!;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 1.2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                ),
-                itemCount: categories.length,
-                itemBuilder: (context, index) {
-                  return _CategoryCard(
-                    category: categories[index],
-                  );
-                },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return GridView.builder(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 1.2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: categories.length,
+            itemBuilder: (context, index) {
+              return _CategoryCard(
+                category: categories[index],
+                categories: categories,
               );
             },
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
 
 class _CategoryCard extends StatefulWidget {
   final CategoryModel category;
+  final List<CategoryModel> categories;
 
   const _CategoryCard({
     required this.category,
+    required this.categories,
   });
 
   @override
@@ -87,7 +80,8 @@ class _CategoryCardState extends State<_CategoryCard>
           context,
           MaterialPageRoute(
             builder: (context) => ScannerView(
-              category: widget.category.name,
+              category: widget.category,
+              categories: widget.categories,
             ),
           ),
         ),

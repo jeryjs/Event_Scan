@@ -10,7 +10,7 @@ class ResultDialog extends StatefulWidget {
   final Map<String, dynamic>? result;
   final String barcode;
   final VoidCallback onDismissed;
-  final List<CategoryModel>? categories; // Optional: pass categories if available
+  final List<CategoryModel>? categories;
 
   const ResultDialog({
     super.key,

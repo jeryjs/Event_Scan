@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:party_scan/models/category_model.dart';
 
-import '../services/database.dart';
-import 'barcode_list.dart';
+import '../../services/database.dart';
+import '../../components/barcode_list.dart';
 
 class DraggableSheet extends StatelessWidget {
   final int index;
-  final String category;
+  final CategoryModel category;
+  final List<CategoryModel> categories;
 
-  const DraggableSheet({super.key, required this.index, required this.category});
+  const DraggableSheet({super.key, required this.index, required this.category, required this.categories});
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +35,18 @@ class DraggableSheet extends StatelessWidget {
             body: TabBarView(
               children: [
                 BarcodeList(
-                  stream: Database.getBarcodes(category: category, isScanned: true),
+                  stream: Database.getBarcodes(category: category.name, isScanned: true),
                   scrollController: scrollController,
-                  category: category,
+                  category: category.name,
                   isScanned: true,
+                  categories: categories,
                 ),
                 BarcodeList(
-                  stream: Database.getBarcodes(category: category, isScanned: false),
+                  stream: Database.getBarcodes(category: category.name, isScanned: false),
                   scrollController: scrollController,
-                  category: category,
+                  category: category.name,
                   isScanned: false,
+                  categories: categories,
                 ),
               ],
             ),

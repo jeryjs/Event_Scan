@@ -6,8 +6,9 @@ import '../services/database.dart';
 
 class BarcodeRow extends StatelessWidget {
   final BarcodeModel barcode;
+  final List<CategoryModel> categories;
 
-  const BarcodeRow({super.key, required this.barcode});
+  const BarcodeRow({super.key, required this.barcode, required this.categories});
 
   @override
   Widget build(BuildContext context) {
@@ -101,57 +102,48 @@ class BarcodeRow extends StatelessWidget {
   }
 
   Widget _buildCategoryIcons(BuildContext context) {
-    return FutureBuilder<List<CategoryModel>>(
-      future: Database.getCategories(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return Container();
-        }
-        final categories = snapshot.data!;
-        return SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: barcode.scanned.entries.map((entry) {
-              CategoryModel category;
-              try { category = categories.firstWhere((cat) => cat.name == entry.key); } catch (e) { return Container(); }
-              return Row(
-                children: entry.value.map((day) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Tooltip(
-                      message: '${category.name} - Day $day',
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Color(category.colorValue).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              category.icon.data,
-                              size: 16,
-                              color: Color(category.colorValue),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '$day',
-                              style: TextStyle(
-                                color: Color(category.colorValue),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: barcode.scanned.entries.map((entry) {
+          CategoryModel category;
+          try { category = categories.firstWhere((cat) => cat.name == entry.key); } catch (e) { return Container(); }
+          return Row(
+            children: entry.value.map((day) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Tooltip(
+                  message: '${category.name} - Day $day',
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Color(category.colorValue).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  );
-                }).toList(),
+                    child: Row(
+                      children: [
+                        Icon(
+                          category.icon.data,
+                          size: 16,
+                          color: Color(category.colorValue),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$day',
+                          style: TextStyle(
+                            color: Color(category.colorValue),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               );
             }).toList(),
-          ),
-        );
-      },
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -246,11 +238,11 @@ class BarcodeRow extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: barcode.scanned.entries.indexed.map((entry) {
-        // final categoryIcon = getCategoryIconByName(entry.$2.key);
-        final categoryIcon = Icons.category;
+        CategoryModel category;
+        try { category = categories.firstWhere((cat) => cat.name == entry.$2.key); } catch (e) { return Container(); }
         final dayColor = dayColors[entry.$1+1] ?? Colors.grey;
         return Chip(
-          avatar: Icon(categoryIcon, color: dayColor),
+          avatar: Icon(category.icon.data, color: dayColor),
           label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
           backgroundColor: dayColor.withOpacity(0.1),
         );

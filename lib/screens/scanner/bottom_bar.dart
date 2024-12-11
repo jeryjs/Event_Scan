@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../components/draggable_sheet.dart';
+import 'package:party_scan/models/category_model.dart';
+import 'draggable_sheet.dart';
 
 class BottomBar extends StatelessWidget {
-  final String category;
-  const BottomBar({super.key, required this.category});
+  final CategoryModel category;
+  final List<CategoryModel> categories;
+  
+  const BottomBar({super.key, required this.category, required this.categories});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +28,7 @@ class BottomBar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableSheet(index: index, category: category),
+      builder: (context) => DraggableSheet(index: index, category: category, categories: categories),
     );
   }
 }

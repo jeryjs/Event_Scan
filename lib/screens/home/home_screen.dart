@@ -6,6 +6,7 @@ import './categories_grid.dart';
 import 'day_header.dart';
 import '../settings/settings_screen.dart';
 import '../../services/database.dart';
+import '../../models/category_model.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  late List<CategoryModel> _categories;
 
   @override
   void initState() {
@@ -63,8 +65,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               return Column(
                 children: [
                   DayHeader(day: day),
-
-                  const Expanded(child: CategoriesGrid()),
+                  FutureBuilder<List<CategoryModel>>(
+                    future: Database.getCategories(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Expanded(child: Center(child: CircularProgressIndicator()));
+                      }
+                      _categories = snapshot.data!;
+                      return Expanded(child: CategoriesGrid(categories: _categories));
+                    },
+                  ),
                 ],
               );
             },
@@ -116,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const DashboardScreen()),
+                            builder: (context) => DashboardScreen(categories: _categories)),
                       ),
                     ),
                   ],
