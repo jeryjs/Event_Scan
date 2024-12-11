@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/category_model.dart';
-import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 
 class Database {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;

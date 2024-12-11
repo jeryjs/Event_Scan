@@ -18,6 +18,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   List<Map<String, dynamic>> _users = [];
+  // ignore: unused_field
   bool _isLoading = true;
   int _selectedDay = 0; // 0 represents 'All' days
   late List<String> _dayOptions;

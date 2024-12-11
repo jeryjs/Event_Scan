@@ -155,7 +155,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
           ...scanned.entries.indexed.map((entry) {
             CategoryModel category;
             try { category = _categories!.firstWhere((cat) => cat.name == entry.$2.key); } catch (e) { return Container(); }
-            final dayColor = dayColors[entry.$1] ?? Colors.grey;
+            final dayColor = dayColors[entry.$1];
             return Chip(
               avatar: Icon(category.icon.data, color: dayColor),
               label: Text('${entry.$2.key} - Day ${entry.$2.value}'),

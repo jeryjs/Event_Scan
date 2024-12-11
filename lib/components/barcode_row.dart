@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../constants/day_colors.dart';
 import '../models/barcode_model.dart';
 import '../models/category_model.dart';
-import '../services/database.dart';
 
 class BarcodeRow extends StatelessWidget {
   final BarcodeModel barcode;
@@ -240,7 +239,7 @@ class BarcodeRow extends StatelessWidget {
       children: barcode.scanned.entries.indexed.map((entry) {
         CategoryModel category;
         try { category = categories.firstWhere((cat) => cat.name == entry.$2.key); } catch (e) { return Container(); }
-        final dayColor = dayColors[entry.$1+1] ?? Colors.grey;
+        final dayColor = dayColors[entry.$1+1];
         return Chip(
           avatar: Icon(category.icon.data, color: dayColor),
           label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
