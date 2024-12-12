@@ -68,6 +68,9 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     final code = widget.result?['code'] ?? 'Unknown';
     final mail = widget.result?['mail'] ?? 'Unknown';
     final phone = widget.result?['phone'] ?? 'Unknown';
+    final institute = widget.result?['institute'] ?? 'Unknown';
+    final state = widget.result?['state'] ?? 'Unknown';
+    final designation = widget.result?['designation'] ?? 'Unknown';
     final scanned = Map<String, dynamic>.from(widget.result?['scanned'] ?? {});
     final isScanned = widget.result?['isScanned'];
 
@@ -119,6 +122,9 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                   Text("Name: $name"),
                   Text("Mail: $mail"),
                   Text("Phone: $phone"),
+                  Text("Institute: $institute"),
+                  Text("State: $state"),
+                  Text("Designation: $designation"),
                   const SizedBox(height: 8),
                   _buildScannedDays(scanned),
                 ],

@@ -24,6 +24,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   late List<Map<String, dynamic>> _usersData;
   bool _isJsonMode = false;
   late TextEditingController _jsonController;
+  String? _jsonError;
 
   @override
   void initState() {
@@ -42,8 +43,9 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         try {
           _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
           _tabController = TabController(length: _usersData.length, vsync: this);
-        } catch (_) {
-          // Handle JSON parse error if needed
+          _jsonError = null;
+        } catch (error) {
+          _jsonError = 'Invalid JSON format';
         }
       }
     });
@@ -54,8 +56,11 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
       _usersData.add({
         'code': '',
         'name': '',
-        'mail': '',
+        'email': '',
         'phone': '',
+        'institute': '',
+        'state': '',
+        'designation': '',
       });
       _tabController = TabController(length: _usersData.length, vsync: this);
       _tabController.animateTo(_usersData.length - 1);
@@ -66,19 +71,16 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     if (_isJsonMode) {
       try {
         _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
-      } catch (_) {
-        // Handle JSON parse error if needed
+        _jsonError = null;
+      } catch (error) {
+        setState(() {
+          _jsonError = 'Invalid JSON format';
+        });
+        return;
       }
     }
-    for (var userData in _usersData) {
-      await Database.updateUser(
-        userData['code'],
-        userData['name'],
-        userData['mail'],
-        userData['phone'],
-      );
-    }
-    if (mounted) {
+    await Database.updateUsers(_usersData);
+    if (mounted) { 
       Navigator.of(context).pop();
     }
   }
@@ -102,7 +104,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
               ],
             ),
             SizedBox(
-              height: 400,
+              height: 700,
               child: _isJsonMode
                   ? TextField(
                       controller: _jsonController,
@@ -182,7 +184,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                     TextField(
                                       onChanged: (value) {
                                         setState(() {
-                                          _usersData[userIndex]['mail'] = value;
+                                          _usersData[userIndex]['email'] = value;
                                         });
                                       },
                                       decoration: InputDecoration(
@@ -190,7 +192,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                         prefixIcon: const Icon(Icons.email),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['mail']),
+                                      controller: TextEditingController(text: userData['email']),
                                     ),
                                     const SizedBox(height: 20),
                                     TextField(
@@ -199,11 +201,54 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                           _usersData[userIndex]['phone'] = value;
                                         });
                                       },
-                                      decoration: const InputDecoration(
+                                      decoration: InputDecoration(
                                         labelText: 'Phone',
-                                        prefixIcon: Icon(Icons.phone),
+                                        prefixIcon: const Icon(Icons.phone),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['phone']),
+                                      controller: TextEditingController(text: userData['phone'].toString()),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['institute'] = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Institute',
+                                        prefixIcon: const Icon(Icons.school),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      controller: TextEditingController(text: userData['institute']),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['state'] = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'State',
+                                        prefixIcon: const Icon(Icons.location_on),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      controller: TextEditingController(text: userData['state']),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    TextField(
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _usersData[userIndex]['designation'] = value;
+                                        });
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Designation',
+                                        prefixIcon: const Icon(Icons.work),
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      controller: TextEditingController(text: userData['designation']),
                                     ),
                                   ],
                                 ),
@@ -214,6 +259,14 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                       ],
                     ),
             ),
+            if (_isJsonMode && _jsonError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  _jsonError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [

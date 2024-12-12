@@ -5,6 +5,9 @@ class BarcodeModel {
   final String name;
   final String email;
   final String phone;
+  final String institute;
+  final String state;
+  final String designation;
   final Map<String, List<int>> scanned;
   final Timestamp timestamp;
 
@@ -13,6 +16,9 @@ class BarcodeModel {
     required this.name,
     required this.email,
     required this.phone,
+    required this.institute,
+    required this.state,
+    required this.designation,
     required this.scanned,
     required this.timestamp,
   });
@@ -24,6 +30,9 @@ class BarcodeModel {
       name: data?['name'] ?? '',
       email: data?['email'] ?? '',
       phone: data?['phone'] ?? '',
+      institute: data?['institute'] ?? '',
+      state: data?['state'] ?? '',
+      designation: data?['designation'] ?? '',
       scanned: (data?['scanned'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(
           key,
@@ -40,6 +49,9 @@ class BarcodeModel {
       'name': name,
       'email': email,
       'phone': phone,
+      'institute': institute,
+      'state': state,
+      'designation': designation,
       'scanned': scanned,
       'timestamp': timestamp,
     };

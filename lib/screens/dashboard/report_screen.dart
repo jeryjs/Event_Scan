@@ -97,6 +97,9 @@ class _ReportScreenState extends State<ReportScreen> {
     return [
       const DataColumn(label: Text('Code')),
       const DataColumn(label: Text('Name')),
+      // const DataColumn(label: Text('Institute')),
+      // const DataColumn(label: Text('State')),
+      const DataColumn(label: Text('Designation')),
       const DataColumn(label: Text('Categories')),
     ];
   }
@@ -114,6 +117,9 @@ class _ReportScreenState extends State<ReportScreen> {
           ),
         ),
         DataCell(Text(user['name'] ?? '')),
+        // DataCell(Text(user['institute'] ?? '')),
+        // DataCell(Text(user['state'] ?? '')),
+        DataCell(Text(user['designation'] ?? '')),
         DataCell(_buildCategoryIcons(categories)),
       ]);
     }).toList();
@@ -147,7 +153,7 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _exportToCSV() async {
-    String csvData = 'Code,Name,Mail,Phone,Categories\n';
+    String csvData = 'Code,Name,Mail,Phone,Institute,State,Designation,Categories\n';
     var filteredUsers = widget.users.where((user) {
       var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
       bool scannedOnDay = false;
@@ -167,8 +173,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
     for (var user in filteredUsers) {
       var categories = (user['scanned'] as Map<String, dynamic>? ?? {}).keys.join('|');
-      csvData +=
-          '${user['code']},${user['name']},${user['mail']},${user['phone']},$categories\n';
+      csvData += '${user['code']},${user['name']},${user['mail']},${user['phone']},${user['institute']},${user['state']},${user['designation']},$categories\n';
     }
 
     try {

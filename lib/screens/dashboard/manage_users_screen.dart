@@ -27,9 +27,11 @@ class ManageUsersScreen extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             elevation: 4,
             child: ListTile(
-              leading: const Icon(Icons.person),
+              leading: CircleAvatar(
+                child: Text(user['code']?.substring(user['code'].length - 3) ?? ''),
+              ),
               title: Text(user['name'] ?? ''),
-              subtitle: Text('Code: ${user['code']}'),
+              subtitle: Text('Code: ${user['code'] ?? ''}\nDesignation: ${user['designation'] ?? ''}'),
               trailing: IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () {

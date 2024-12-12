@@ -47,8 +47,11 @@ class Database {
       return {
         'name': data['name'],
         'code': data['code'],
-        'mail': data['mail'],
+        'email': data['email'],
         'phone': data['phone'],
+        'institute': data['institute'],
+        'state': data['state'],
+        'designation': data['designation'],
         'scanned': scanned,
         'isScanned': isScanned,
       };
@@ -177,13 +180,29 @@ class Database {
     return _firestore.collection('settings').doc('config').snapshots();
   }
 
-  static Future<void> updateUser(String code, String name, String email, String phone) async {
-    return _firestore.collection(await _getCollection()).doc(code).set({
-      'code': code,
-      'name': name,
-      'email': email,
-      'phone': phone,
-    }, SetOptions(merge: true));
+
+  static Future<void> updateUsers(List<Map<String, dynamic>> usersData) async {
+    final batch = _firestore.batch();
+    final collection = await _getCollection();
+
+    for (var userData in usersData) {
+      final docRef = _firestore.collection(collection).doc(userData['code']);
+      batch.set(docRef, {
+        'code': userData['code'],
+        'name': userData['name'],
+        'email': userData['email'],
+        'phone': userData['phone'],
+        'institute': userData['institute'],
+        'state': userData['state'],
+        'designation': userData['designation'],
+      }, SetOptions(merge: true));
+    }
+
+    try {
+      await batch.commit();
+    } catch (error) {
+      debugPrint(error.toString());
+    }
   }
 
   static Future<QuerySnapshot> getUsers() async {
