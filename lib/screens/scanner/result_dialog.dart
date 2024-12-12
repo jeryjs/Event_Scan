@@ -66,7 +66,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final name = widget.result?['name'] ?? 'Unknown';
     final code = widget.result?['code'] ?? 'Unknown';
-    final mail = widget.result?['mail'] ?? 'Unknown';
+    final mail = widget.result?['email'] ?? 'Unknown';
     final phone = widget.result?['phone'] ?? 'Unknown';
     final institute = widget.result?['institute'] ?? 'Unknown';
     final state = widget.result?['state'] ?? 'Unknown';
