@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:party_scan/constants/day_colors.dart';
 import '../../components/edit_user_dialog.dart';
 import '../../models/category_model.dart';
 import 'package:file_picker/file_picker.dart';
@@ -209,20 +210,26 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
           ],
         ),
         child: Card(
-          elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: ExpansionTile(
-            leading: SizedBox(
+            leading: CircleAvatar(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+              backgroundColor: dayColors[widget.selectedDay].withOpacity(0.3),
+              child: Text(codeLast3, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+            trailing: Container(
               width: 70,
-              height: 200,
-              child: Column(
-                children: [
-                  Text(codeLast3, style: const TextStyle(fontSize: 14)),
-                  Wrap(
-                    // mainAxisAlignment: MainAxisAlignment.center,
-                    children: _buildCategoryIcons(scanned.keys.toList())
-                  )
-                ],
+              height: 70,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.blue.withOpacity(0.1),
+              ),
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                runAlignment: WrapAlignment.center,
+                children: _buildCategoryIcons(scanned.keys.toList()),
               ),
             ),
             title: Text(
