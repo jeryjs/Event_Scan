@@ -384,7 +384,11 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         var days = scanned[_selectedCategory] as List<dynamic>? ?? [];
         scannedOnDay = days.isNotEmpty && (widget.selectedDay == 0 || days.contains(widget.selectedDay));
       }
-      return scannedOnDay && (user['name']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false);
+      return scannedOnDay && (
+        (user['name']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
+        (user['code']?.toLowerCase().contains(_searchQuery) ?? false) ||
+        (user['phone']?.toString().contains(_searchQuery) ?? false)
+      );
     }).toList();
   }
 
