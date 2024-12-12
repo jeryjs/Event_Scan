@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../components/custom_step_slider.dart';
 import '../../components/edit_user_dialog.dart';
 import 'manage_users_screen.dart';
@@ -174,23 +175,34 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   Widget _buildStatsCards() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      padding: const EdgeInsets.all(16.0),
-      childAspectRatio: 1.3,
-      mainAxisSpacing: 16.0,
-      crossAxisSpacing: 16.0,
-      children: [
-        _buildAnimatedStatCard(
-            'Total Users',
-            _selectedDay == 0
-                ? _calculateTotalUsers()
-                : _calculateActiveUsers(),
-            Icons.people, Colors.green),
-        ..._buildCategoryStats(),
-      ],
+    return AnimationLimiter(
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        padding: const EdgeInsets.all(16.0),
+        childAspectRatio: 1.3,
+        mainAxisSpacing: 16.0,
+        crossAxisSpacing: 16.0,
+        children: AnimationConfiguration.toStaggeredList(
+          duration: const Duration(milliseconds: 375),
+          childAnimationBuilder: (widget) => SlideAnimation(
+            verticalOffset: 50.0,
+            child: FadeInAnimation(
+              child: widget,
+            ),
+          ),
+          children: [
+            _buildAnimatedStatCard(
+                'Total Users',
+                _selectedDay == 0
+                    ? _calculateTotalUsers()
+                    : _calculateActiveUsers(),
+                Icons.people, Colors.green),
+            ..._buildCategoryStats(),
+          ],
+        ),
+      ),
     );
   }
 
