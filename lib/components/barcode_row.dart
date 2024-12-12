@@ -62,10 +62,6 @@ class BarcodeRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (barcode.scanned.isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  _buildCategoryIcons(context),
-                ],
               ],
             ),
           ),
@@ -107,55 +103,11 @@ class BarcodeRow extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryIcons(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: barcode.scanned.entries.map((entry) {
-          CategoryModel category;
-          try { category = categories.firstWhere((cat) => cat.name == entry.key); } catch (e) { return Container(); }
-          return Row(
-            children: entry.value.map((day) {
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Tooltip(
-                  message: '${category.name} - Day $day',
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: Color(category.colorValue).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          category.icon.data,
-                          size: 16,
-                          color: Color(category.colorValue),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$day',
-                          style: TextStyle(
-                            color: Color(category.colorValue),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   void _showDetailDialog(BuildContext context) {
     showGeneralDialog(
       context: context,
+      barrierLabel: 'Detail Dialog',
+      barrierDismissible: true,
       pageBuilder: (context, animation, secondaryAnimation) {
         return Container();
       },
@@ -179,6 +131,8 @@ class BarcodeRow extends StatelessWidget {
                     const Divider(height: 32),
                     _buildDetailRow(Icons.email, barcode.email),
                     _buildDetailRow(Icons.phone, barcode.phone),
+                    _buildDetailRow(Icons.location_on, barcode.state),
+                    _buildDetailRow(Icons.business, barcode.institute),
                     _buildDetailRow(Icons.access_time, barcode.timestamp.toDate().toString()),
                     const SizedBox(height: 16),
                     _buildScannedCategories(context),
@@ -204,6 +158,7 @@ class BarcodeRow extends StatelessWidget {
       children: [
         Text(
           barcode.name,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -243,13 +198,13 @@ class BarcodeRow extends StatelessWidget {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: barcode.scanned.entries.indexed.map((entry) {
+      children: barcode.scanned.entries.map((entry) {
         CategoryModel category;
-        try { category = categories.firstWhere((cat) => cat.name == entry.$2.key); } catch (e) { return Container(); }
-        final dayColor = dayColors[entry.$1+1];
+        try { category = categories.firstWhere((cat) => cat.name == entry.key); } catch (e) { return Container(); }
+        final dayColor = dayColors[entry.value.first];
         return Chip(
           avatar: Icon(category.icon.data, color: dayColor),
-          label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
+          label: Text('${entry.key} - Days ${entry.value.join(", ")}'),
           backgroundColor: dayColor.withOpacity(0.1),
         );
       }).toList(),

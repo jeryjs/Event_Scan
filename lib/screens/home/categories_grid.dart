@@ -4,8 +4,9 @@ import '../scanner/scanner_view.dart';
 
 class CategoriesGrid extends StatelessWidget {
   final List<CategoryModel> categories;
+  final int selectedDay;
 
-  const CategoriesGrid({super.key, required this.categories});
+  const CategoriesGrid({super.key, required this.categories, required this.selectedDay});
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +26,7 @@ class CategoriesGrid extends StatelessWidget {
               return _CategoryCard(
                 category: categories[index],
                 categories: categories,
+                selectedDay: selectedDay
               );
             },
           );
@@ -37,10 +39,12 @@ class CategoriesGrid extends StatelessWidget {
 class _CategoryCard extends StatefulWidget {
   final CategoryModel category;
   final List<CategoryModel> categories;
+  final int selectedDay;
 
   const _CategoryCard({
     required this.category,
     required this.categories,
+    required this.selectedDay
   });
 
   @override
@@ -82,6 +86,7 @@ class _CategoryCardState extends State<_CategoryCard>
             builder: (context) => ScannerView(
               category: widget.category,
               categories: widget.categories,
+              selectedDay: widget.selectedDay
             ),
           ),
         ),

@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         return const Expanded(child: Center(child: CircularProgressIndicator()));
                       }
                       _categories = snapshot.data!;
-                      return Expanded(child: CategoriesGrid(categories: _categories));
+                      return Expanded(child: CategoriesGrid(categories: _categories, selectedDay: day));
                     },
                   ),
                 ],

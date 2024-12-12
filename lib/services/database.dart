@@ -59,13 +59,13 @@ class Database {
     return null;
   }
 
-  static Stream<QuerySnapshot> getBarcodes({required String category, required bool isScanned}) {
+  static Stream<QuerySnapshot> getBarcodes({required String category, required bool isScanned, required int selectedDay}) {
     // final collection = await _getCollection();
-    const collection = "FDP_2024";
+    const collection = "FDP_2024_testing";
     if (isScanned) {
       return _firestore
           .collection(collection)
-          .where('scanned.$category', isGreaterThan: [])
+          .where('scanned.$category', arrayContains: selectedDay)
           .snapshots();
     } else {
       return _firestore

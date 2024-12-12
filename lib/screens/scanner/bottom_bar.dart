@@ -5,8 +5,9 @@ import 'draggable_sheet.dart';
 class BottomBar extends StatelessWidget {
   final CategoryModel category;
   final List<CategoryModel> categories;
+  final int selectedDay;
   
-  const BottomBar({super.key, required this.category, required this.categories});
+  const BottomBar({super.key, required this.category, required this.categories, required this.selectedDay});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +29,7 @@ class BottomBar extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => DraggableSheet(index: index, category: category, categories: categories),
+      builder: (context) => DraggableSheet(index: index, category: category, categories: categories, selectedDay: selectedDay),
     );
   }
 }

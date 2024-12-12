@@ -76,12 +76,31 @@ class BarcodeListState extends State<BarcodeList> {
                 return matchesCategory && barcode.code.isNotEmpty && _matchesSearch(barcode);
               }).toList();
 
-              final sortedDocs = filteredDocs
+                final sortedDocs = filteredDocs
                 ..sort((a, b) {
+                  if (!widget.isScanned) {
+                  final aCode = (a.data() as Map<String, dynamic>)['code'] as String;
+                  final bCode = (b.data() as Map<String, dynamic>)['code'] as String;
+                  return aCode.compareTo(bCode);
+                  } else {
                   final aTimestamp = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
                   final bTimestamp = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
                   return (bTimestamp ?? Timestamp.now()).compareTo(aTimestamp ?? Timestamp.now());
+                  }
                 });
+
+              if (sortedDocs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inbox, size: 100, color: Colors.grey.shade400),
+                      const SizedBox(height: 16),
+                      const Text('No barcodes found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                    ],
+                  ),
+                );
+              }
 
               return ListView.builder(
                 controller: widget.scrollController,
