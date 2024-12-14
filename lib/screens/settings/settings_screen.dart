@@ -16,6 +16,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   DateTime? _startDate;
   DateTime? _endDate;
   bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -27,8 +28,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     var settings = await Database.getSettings();
     _collectionNameController.text = settings['collectionName'] ?? 'FDP_2024';
     _eventTitleController.text = settings['eventTitle'] ?? 'Event Scan';
-    _startDate = settings['startDate'] != null ? (settings['startDate'] as Timestamp).toDate() : DateTime.now();
-    _endDate = settings['endDate'] != null ? (settings['endDate'] as Timestamp).toDate() : DateTime.now().add(const Duration(days: 7));
+    _startDate = settings['startDate'] != null
+        ? (settings['startDate'] as Timestamp).toDate()
+        : DateTime.now();
+    _endDate = settings['endDate'] != null
+        ? (settings['endDate'] as Timestamp).toDate()
+        : DateTime.now().add(const Duration(days: 7));
     setState(() {
       _isLoading = false;
     });
@@ -41,6 +46,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
       return;
     }
+    setState(() {
+      _isSaving = true;
+    });
     await Database.saveSettings({
       'collectionName': _collectionNameController.text.trim(),
       'eventTitle': _eventTitleController.text.trim(),
@@ -52,6 +60,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SnackBar(content: Text('Settings saved')),
       );
     }
+    setState(() {
+      _isSaving = false;
+    });
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
@@ -219,23 +230,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ElevatedButton(
-                        onPressed: () async {
-                          final navigator = Navigator.of(context);
-                          await _saveSettings();
-                          if (mounted) {
-                            navigator.popUntil((route) => route.isFirst);
-                          }
-                        },
+                        onPressed: _isSaving
+                            ? null
+                            : () async {
+                                final navigator = Navigator.of(context);
+                                await _saveSettings();
+                                if (mounted) {
+                                  navigator.popUntil((route) => route.isFirst);
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.all(16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text(
-                          'Save Settings',
-                          style: TextStyle(fontSize: 16),
-                        ),
+                        child: _isSaving
+                            ? const CircularProgressIndicator(
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                              )
+                            : const Text(
+                                'Save Settings',
+                                style: TextStyle(fontSize: 16),
+                              ),
                       ),
                     ),
                   ]),
