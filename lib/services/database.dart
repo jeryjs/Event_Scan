@@ -59,9 +59,8 @@ class Database {
     return null;
   }
 
-  static Stream<QuerySnapshot> getBarcodes({required String category, required bool isScanned, required int selectedDay}) {
-    // final collection = await _getCollection();
-    const collection = "FDP_2024_testing";
+  static Future<Stream<QuerySnapshot>> getBarcodes({required String category, required bool isScanned, required int selectedDay}) async {
+    final collection = await _getCollection();
     if (isScanned) {
       return _firestore
           .collection(collection)
