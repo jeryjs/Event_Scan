@@ -11,16 +11,22 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.24.2'
+
     - name: Write key.properties
       run: echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
 
     - name: Write key.jks
       run: echo "${{ secrets.KEY_JKS }}" | base64 --decode > android/key.jks
 
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.24.2'
+    - name: Build APK
+      run: |
+        flutter pub get
+        dart run flutter_iconpicker:generate_packs --packs material
+        flutter build apk --release --split-per-abi --no-tree-shake-icons
 
     - name: Get version from pubspec.yaml
       id: get_version
@@ -32,12 +38,25 @@ jobs:
       run: |
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
-        git tag "v${{ env.VERSION }}"
-        git push origin "v${{ env.VERSION }}"
+        git tag "v${{ env.VERSION }}" || echo "Tag already exists"
+        git push origin "v${{ env.VERSION }}" || echo "Tag already pushed"
 
-    - name: Build APK
+    - name: Prepare Release
       run: |
-        flutter build apk --release --split-per-abi --no-tree-shake-icons
+        set -e
+        git fetch --tags
+        prev_release_sha=$(git log --oneline --decorate --tags --no-walk --pretty='%C(auto)%h' | head -n 2 | tail -1)
+        echo "PREV_RELEASE_SHA=$prev_release_sha" >> $GITHUB_ENV
+        
+        current_sha=$(git log --oneline --decorate --tags --no-walk --pretty='%C(auto)%h' | head -n 1)
+        echo "CURRENT_SHA=$current_sha" >> $GITHUB_ENV
+        
+        echo "COMMIT_LOGS<<{delimiter}
+        $(curl -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/jeryjs/Event_Scan/compare/$prev_release_sha...$current_sha" \
+          | jq '[.commits[]|{message:(.commit.message | split("\n")), username:.author.login}]' \
+          | jq -r '.[]|"- \(.message | first) (@\(.username))"')
+        {delimiter}" >> $GITHUB_ENV
 
     - name: Create Release
       id: create_release
@@ -50,40 +69,14 @@ jobs:
         body: |
           ## Commits
 
-          ${{ github.event.before }}...${{ github.sha }}
+          ${{env.COMMIT_LOGS}}
 
-          $(git log --pretty=format:"- %s (%h) (@%an)" --reverse ${{ github.event.before }}...${{ github.sha }})
+          **Full Changelog**: https://github.com/jeryjs/Event_Scan/compare/${{ env.PREV_RELEASE_SHA }}...${{ env.CURRENT_SHA }}
 
-          **Full Changelog**: https://github.com/jeryjs/Event_Scan/compare/${{ github.event.before }}...${{ github.sha }})
+          ---
+        files: |
+          build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+          build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          build/app/outputs/flutter-apk/app-x86_64-release.apk
         draft: false
         prerelease: false
-
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-        asset_name: app-armeabi-v7a-release.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-        asset_name: app-arm64-v8a-release.apk
-        asset_content_type: application/vnd.android.package-archive
-
-    - name: Upload APK to Release
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: build/app/outputs/flutter-apk/app-x86_64-release.apk
-        asset_name: app-x86_64-release.apk
-        asset_content_type: application/vnd.android.package-archive
