@@ -7,27 +7,29 @@ class Database {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   static Future<String> _getCollection() async {
-    var snapshot = await _firestore.collection('settings').doc('config').get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      return data['collectionName'] ?? 'FDP_2024';
-    }
-    return 'FDP_2024';
+    var settings = await getSettings();
+    return settings['collectionName'] ?? 'FDP_2024';
   }
 
-  static Future<DateTime> getStartDate() async {
+  static Future<Map<String, dynamic>> getSettings() async {
     var snapshot = await _firestore.collection('settings').doc('config').get();
     if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      return (data['startDate'] as Timestamp).toDate();
+      return snapshot.data() as Map<String, dynamic>;
     }
-    return DateTime.now();
+    return {};
+  }
+
+  static Future<void> saveSettings(Map<String, dynamic> settings) async {
+    await _firestore.collection('settings').doc('config').set(settings, SetOptions(merge: true));
   }
 
   static Future<Map<String, dynamic>?> checkBarcode(String barcode, String category) async {
-    final collection = await _getCollection();
+    var settings = await getSettings();
+    final collection = settings['collectionName'] ?? 'FDP_2024';
+    final startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final currentDay = DateTime.now().difference(startDate).inDays + 1;
+
     var doc = await _firestore.collection(collection).doc(barcode).get();
-    final currentDay = await _calculateCurrentDay();
 
     if (doc.exists) {
       var data = doc.data() as Map<String, dynamic>;
@@ -115,15 +117,6 @@ class Database {
     }
   }
 
-  static Future<int> _calculateCurrentDay() async {
-    var snapshot = await _firestore.collection('settings').doc('config').get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      final startDate = (data['startDate'] as Timestamp).toDate();
-      return DateTime.now().difference(startDate).inDays + 1;
-    }
-    return 1;
-  }
 
   static Future<int> calculateMaxDay() async {
     // Fetch and calculate the maximum day from the data
@@ -210,20 +203,5 @@ class Database {
 
   static Future<void> deleteUser(String id) async {
     return _firestore.collection(await _getCollection()).doc(id).delete();
-  }
-
-  static Future<String> getEventTitle() async {
-    var snapshot = await _firestore.collection('settings').doc('config').get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      return data['eventTitle'] ?? 'Event Scan';
-    }
-    return 'Event Scan';
-  }
-
-  static Future<void> saveEventTitle(String title) async {
-    await _firestore.collection('settings').doc('config').set({
-      'eventTitle': title,
-    }, SetOptions(merge: true));
   }
 }

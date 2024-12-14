@@ -22,7 +22,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   // ignore: unused_field
   bool _isLoading = true;
   int _selectedDay = 0; // 0 represents 'All' days
-  late List<String> _dayOptions;
+  List<String> _dayOptions = [];
   final Map<String, int> _categoryCounts = {};
   late AnimationController _initialAnimationController;
   late Animation<double> _initialAnimation;
@@ -50,9 +50,14 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     super.dispose();
   }
 
-  void _initializeDayOptions() {
-    // Assuming maximum of 7 days
-    _dayOptions = ['All', '1', '2', '3', '4', '5'];
+  void _initializeDayOptions() async {
+    var settings = await Database.getSettings();
+    DateTime startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+    DateTime endDate = (settings['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 7));
+    int totalDays = endDate.difference(startDate).inDays + 1;
+    setState(() {
+      _dayOptions = ['All', for (int i = 1; i <= totalDays; i++) i.toString()];
+    });
   }
 
   Future<void> _loadData() async {
@@ -138,23 +143,30 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   Widget _buildDaySlider() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
-      child: CustomStepSlider(
-        values: _dayOptions,
-        selectedValue: _dayOptions[_selectedDay],
-        onValueSelected: (value) => _onDaySelected(_dayOptions.indexOf(value)),
-        thumbColor: Colors.white.withOpacity(0.2),
-        activeTextColor: Colors.white,
-        inactiveTextColor: Colors.white70,
-        containerHeight: 80.0,
-        thumbSize: 55.0,
-        activeFontSize: 24.0,
-        inactiveFontSize: 16.0,
-        sliderDecoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(24),
+      child: SizedBox(
+        height: 80.0,
+        child: Center(
+          child: _dayOptions.isEmpty
+            ? const CircularProgressIndicator()
+            : CustomStepSlider(
+                values: _dayOptions,
+                selectedValue: _dayOptions[_selectedDay],
+                onValueSelected: (value) => _onDaySelected(_dayOptions.indexOf(value)),
+                thumbColor: Colors.white.withOpacity(0.2),
+                activeTextColor: Colors.white,
+                inactiveTextColor: Colors.white70,
+                containerHeight: 80.0,
+                thumbSize: 55.0,
+                activeFontSize: 24.0,
+                inactiveFontSize: 16.0,
+                sliderDecoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                thumbCorrection: const EdgeInsets.only(left: -10, right: -20),
+              ),
         ),
-        thumbCorrection: const EdgeInsets.only(left: -10, right: -20),
-      ),
+      )
     );
   }
 

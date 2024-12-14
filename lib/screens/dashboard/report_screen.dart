@@ -1,8 +1,10 @@
 import 'dart:typed_data';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:party_scan/constants/day_colors.dart';
+import 'package:party_scan/services/database.dart';
 import '../../components/edit_user_dialog.dart';
 import '../../models/category_model.dart';
 import 'package:file_picker/file_picker.dart';
@@ -430,7 +432,12 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     }
 
     // Individual day sheets
-    for (int day = 1; day <= 6; day++) {
+    var settings = await Database.getSettings();
+    DateTime startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+    DateTime endDate = (settings['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 7));
+    int totalDays = endDate.difference(startDate).inDays + 1;
+
+    for (int day = 1; day <= totalDays; day++) {
       final daySheet = excel['Day $day'];
 
       final headers = ['Code', 'Name', ...widget.categories.map((c) => c.name)];

@@ -14,6 +14,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final _collectionNameController = TextEditingController();
   final _eventTitleController = TextEditingController();
   DateTime? _startDate;
+  DateTime? _endDate;
   bool _isLoading = true;
 
   @override
@@ -23,31 +24,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadSettings() async {
-    var snapshot = await FirebaseFirestore.instance
-        .collection('settings')
-        .doc('config')
-        .get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      _collectionNameController.text = data['collectionName'] ?? 'FDP_2024';
-      _eventTitleController.text = await Database.getEventTitle();
-      _startDate = (data['startDate'] as Timestamp).toDate();
-    } else {
-      _collectionNameController.text = 'FDP_2024';
-      _eventTitleController.text = await Database.getEventTitle();
-      _startDate = DateTime.now();
-    }
+    var settings = await Database.getSettings();
+    _collectionNameController.text = settings['collectionName'] ?? 'FDP_2024';
+    _eventTitleController.text = settings['eventTitle'] ?? 'Event Scan';
+    _startDate = settings['startDate'] != null ? (settings['startDate'] as Timestamp).toDate() : DateTime.now();
+    _endDate = settings['endDate'] != null ? (settings['endDate'] as Timestamp).toDate() : DateTime.now().add(const Duration(days: 7));
     setState(() {
       _isLoading = false;
     });
   }
 
   Future<void> _saveSettings() async {
-    await FirebaseFirestore.instance.collection('settings').doc('config').set({
+    if (_endDate!.isBefore(_startDate!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('End date must be after start date')),
+      );
+      return;
+    }
+    await Database.saveSettings({
       'collectionName': _collectionNameController.text.trim(),
+      'eventTitle': _eventTitleController.text.trim(),
       'startDate': Timestamp.fromDate(_startDate!),
-    }, SetOptions(merge: true));
-    await Database.saveEventTitle(_eventTitleController.text.trim());
+      'endDate': Timestamp.fromDate(_endDate!),
+    });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Settings saved')),
@@ -65,6 +64,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (picked != null && picked != _startDate) {
       setState(() {
         _startDate = picked;
+      });
+    }
+  }
+
+  Future<void> _selectEndDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? DateTime.now().add(const Duration(days: 5)),
+      firstDate: _startDate ?? DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != _endDate) {
+      setState(() {
+        _endDate = picked;
       });
     }
   }
@@ -169,6 +182,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: Text(
                           _startDate != null
                               ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
+                              : 'Select',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ),
+                    _buildSettingCard(
+                      title: 'End Date',
+                      subtitle: 'Configure the event end date',
+                      leading: const Icon(Icons.calendar_today),
+                      trailing: TextButton(
+                        onPressed: () => _selectEndDate(context),
+                        child: Text(
+                          _endDate != null
+                              ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
                               : 'Select',
                           style: const TextStyle(fontSize: 16),
                         ),

@@ -9,7 +9,7 @@ class DayHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String>(
-      future: Database.getEventTitle(),
+      future: Database.getSettings().then((settings) => settings['eventTitle']),
       builder: (context, snapshot) {
         final title = snapshot.data ?? 'Event Scan';
         return Container(

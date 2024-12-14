@@ -63,7 +63,7 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
           height: widget.containerHeight ?? widget.thumbSize! * 2,
           decoration: widget.sliderDecoration ?? defaultDecoration,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 50),
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
