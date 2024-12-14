@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../services/database.dart';
 import 'manage_categories_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -11,6 +12,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _collectionNameController = TextEditingController();
+  final _eventTitleController = TextEditingController();
   DateTime? _startDate;
   bool _isLoading = true;
 
@@ -28,9 +30,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (snapshot.exists) {
       var data = snapshot.data() as Map<String, dynamic>;
       _collectionNameController.text = data['collectionName'] ?? 'FDP_2024';
+      _eventTitleController.text = await Database.getEventTitle();
       _startDate = (data['startDate'] as Timestamp).toDate();
     } else {
       _collectionNameController.text = 'FDP_2024';
+      _eventTitleController.text = await Database.getEventTitle();
       _startDate = DateTime.now();
     }
     setState(() {
@@ -43,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       'collectionName': _collectionNameController.text.trim(),
       'startDate': Timestamp.fromDate(_startDate!),
     }, SetOptions(merge: true));
+    await Database.saveEventTitle(_eventTitleController.text.trim());
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Settings saved')),
@@ -125,6 +130,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 SliverList(
                   delegate: SliverChildListDelegate([
+                    _buildSettingCard(
+                      title: 'Event Title',
+                      subtitle: 'Set the event title',
+                      leading: const Icon(Icons.title),
+                      trailing: SizedBox(
+                        width: 200,
+                        child: TextField(
+                          controller: _eventTitleController,
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ),
                     _buildSettingCard(
                       title: 'Collection Name',
                       subtitle: 'Set the Firestore collection name',

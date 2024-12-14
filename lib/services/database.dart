@@ -180,7 +180,6 @@ class Database {
     return _firestore.collection('settings').doc('config').snapshots();
   }
 
-
   static Future<void> updateUsers(List<Map<String, dynamic>> usersData) async {
     final batch = _firestore.batch();
     final collection = await _getCollection();
@@ -212,5 +211,20 @@ class Database {
 
   static Future<void> deleteUser(String id) async {
     return _firestore.collection(await _getCollection()).doc(id).delete();
+  }
+
+  static Future<String> getEventTitle() async {
+    var snapshot = await _firestore.collection('settings').doc('config').get();
+    if (snapshot.exists) {
+      var data = snapshot.data() as Map<String, dynamic>;
+      return data['eventTitle'] ?? 'Event Scan';
+    }
+    return 'Event Scan';
+  }
+
+  static Future<void> saveEventTitle(String title) async {
+    await _firestore.collection('settings').doc('config').set({
+      'eventTitle': title,
+    }, SetOptions(merge: true));
   }
 }
