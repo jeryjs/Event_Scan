@@ -137,28 +137,31 @@ class Database {
   }
 
   static Future<List<CategoryModel>> getCategories() async {
+    final categoryName = await _getCollection();
     var snapshot = await _firestore.collection('settings').doc('categories').get();
     if (snapshot.exists) {
       var data = snapshot.data() as Map<String, dynamic>;
-      var categoriesData = List<Map<String, dynamic>>.from(data['categories'] ?? []);
+      var categoriesData = List<Map<String, dynamic>>.from(data[categoryName] ?? []);
       return categoriesData.map((catData) => CategoryModel.fromMap(catData)).toList();
     }
     return [];
   }
 
   static Future<void> addCategory(CategoryModel category) async {
+    final categoryName = await _getCollection();
     var categories = await getCategories();
     categories.add(category);
     await _firestore.collection('settings').doc('categories').set({
-      'categories': categories.map((cat) => cat.toMap()).toList(),
+      categoryName: categories.map((cat) => cat.toMap()).toList(),
     }, SetOptions(merge: true));
   }
 
   static Future<void> deleteCategory(String categoryName) async {
+    final categoryName = await _getCollection();
     var categories = await getCategories();
     categories.removeWhere((cat) => cat.name == categoryName);
     await _firestore.collection('settings').doc('categories').set({
-      'categories': categories.map((cat) => cat.toMap()).toList(),
+      categoryName: categories.map((cat) => cat.toMap()).toList(),
     }, SetOptions(merge: true));
   }
 

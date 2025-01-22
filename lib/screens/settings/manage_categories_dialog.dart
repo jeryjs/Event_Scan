@@ -317,6 +317,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
                 ),
               ),
             ),
+            const Text("* Restart app to see changes.", style: TextStyle(color: Colors.redAccent),),
             ...categories.map((category) => _buildCategoryTile(category)),
           ],
         );
