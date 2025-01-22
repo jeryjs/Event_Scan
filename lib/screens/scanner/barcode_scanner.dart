@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:party_scan/models/category_model.dart';
 import 'package:party_scan/services/sound_manager.dart';
 
-import '../services/database.dart';
+import '../../services/database.dart';
 import 'result_dialog.dart';
 
 class BarcodeScanner extends StatefulWidget {
-  final String collectionName;
-  const BarcodeScanner({super.key, required this.collectionName});
+  final CategoryModel category;
+  final List<CategoryModel> categories;
+
+  const BarcodeScanner({super.key, required this.category, required this.categories});
 
   @override
   State<BarcodeScanner> createState() => _BarcodeScannerState();
@@ -19,9 +22,9 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
   );
 
   void _onBarcodeScanned(String barcode) async {
-    bool? isScanned = await Database.checkBarcode(barcode);
+    var result = await Database.checkBarcode(barcode, widget.category.name);
 
-    if (isScanned?? true) {
+    if (result == null || result.isEmpty || result['isScanned']) {
       SoundManager.playFailureSound();
     } else {
       SoundManager.playSuccessSound();
@@ -32,11 +35,12 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
       context: context,
       barrierDismissible: true,
       builder: (context) => ResultDialog(
-        isScanned: isScanned,
+        result: result,
         barcode: barcode,
         onDismissed: () {
           controller.start();
         },
+        categories: widget.categories,
       ),
     );
   }

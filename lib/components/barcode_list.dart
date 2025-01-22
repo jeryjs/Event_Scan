@@ -1,18 +1,42 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:party_scan/components/barcode_row.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'barcode_row.dart';
+import '../models/barcode_model.dart';
+import '../models/category_model.dart';
 
 class BarcodeList extends StatefulWidget {
   final Stream<QuerySnapshot> stream;
   final ScrollController scrollController;
-  const BarcodeList({required this.stream, required this.scrollController});
+  final String category;
+  final bool isScanned;
+  final List<CategoryModel> categories;
+
+  const BarcodeList({
+    super.key,
+    required this.stream,
+    required this.scrollController,
+    required this.category,
+    required this.isScanned,
+    required this.categories,
+  });
 
   @override
-  _BarcodeListState createState() => _BarcodeListState();
+  BarcodeListState createState() => BarcodeListState();
 }
 
-class _BarcodeListState extends State<BarcodeList> {
+class BarcodeListState extends State<BarcodeList> {
   String searchTerm = '';
+
+  bool _matchesSearch(BarcodeModel barcode) {
+    if (searchTerm.isEmpty) return true;
+    final lowerCaseTerm = searchTerm.toLowerCase();
+    return barcode.code.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.name.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.email.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.phone.toLowerCase().contains(lowerCaseTerm) ||
+           barcode.timestamp.toDate().toString().contains(lowerCaseTerm);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +45,7 @@ class _BarcodeListState extends State<BarcodeList> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: TextField(
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Search by time or code',
               prefixIcon: Icon(Icons.search),
             ),
@@ -32,25 +56,59 @@ class _BarcodeListState extends State<BarcodeList> {
             },
           ),
         ),
+        const SizedBox(height: 8),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: widget.stream,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
               final docs = snapshot.data!.docs;
               final filteredDocs = docs.where((doc) {
-                return doc.id.contains(searchTerm) ||
-                    doc['timestamp'].toDate().toString().contains(searchTerm);
+                var barcode = BarcodeModel.fromDocument(doc);
+                final matchesCategory = widget.category == 'all' || widget.category.isEmpty
+                    ? true
+                    : widget.isScanned
+                        ? barcode.scanned[widget.category]?.isNotEmpty ?? false
+                        : !(barcode.scanned[widget.category]?.isNotEmpty ?? false);
+
+                return matchesCategory && barcode.code.isNotEmpty && _matchesSearch(barcode);
               }).toList();
+
+                final sortedDocs = filteredDocs
+                ..sort((a, b) {
+                  if (!widget.isScanned) {
+                  final aCode = (a.data() as Map<String, dynamic>)['code'] as String;
+                  final bCode = (b.data() as Map<String, dynamic>)['code'] as String;
+                  return aCode.compareTo(bCode);
+                  } else {
+                  final aTimestamp = (a.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+                  final bTimestamp = (b.data() as Map<String, dynamic>)['timestamp'] as Timestamp?;
+                  return (bTimestamp ?? Timestamp.now()).compareTo(aTimestamp ?? Timestamp.now());
+                  }
+                });
+
+              if (sortedDocs.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.inbox, size: 100, color: Colors.grey.shade400),
+                      const SizedBox(height: 16),
+                      const Text('No barcodes found', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                    ],
+                  ),
+                );
+              }
 
               return ListView.builder(
                 controller: widget.scrollController,
-                itemCount: filteredDocs.length,
+                itemCount: sortedDocs.length,
                 itemBuilder: (context, index) {
-                  var doc = filteredDocs[index];
-                  return BarcodeRow(document: doc);
+                  var doc = sortedDocs[index];
+                  final barcode = BarcodeModel.fromDocument(doc);
+                  return BarcodeRow(barcode: barcode, categories: widget.categories);
                 },
               );
             },
