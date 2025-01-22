@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:party_scan/services/database.dart';
 class DayHeader extends StatelessWidget {
   final int day;
+  // Future<Map<String, dynamic>> settings;
 
   const DayHeader({super.key, required this.day});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<String>(
-      future: Database.getSettings().then((settings) => settings['eventTitle']),
+    return FutureBuilder<Map<String, dynamic>>(
+      future: Database.getSettings(),
       builder: (context, snapshot) {
-        final title = snapshot.data ?? 'Event Scan';
+        final settings = snapshot.data??{};
+        final title = settings['eventTitle'] ?? 'Event Scan';
         return Container(
           padding: EdgeInsets.only(
             top: MediaQuery.of(context).padding.top + 40,
@@ -61,7 +63,7 @@ class DayHeader extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'DAY',
+                          _getDayText(settings['startDate'], settings['endDate']).key,
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w300,
@@ -70,7 +72,7 @@ class DayHeader extends StatelessWidget {
                         ),
                         const SizedBox(width: 10),
                         TweenAnimationBuilder<int>(
-                          tween: IntTween(begin: 0, end: day),
+                          tween: IntTween(begin: 0, end: _getDayText(settings['startDate'], settings['endDate']).value),
                           duration: const Duration(seconds: 1),
                           builder: (context, value, child) {
                             return Text(
@@ -94,6 +96,30 @@ class DayHeader extends StatelessWidget {
       },
     );
   }
+
+  Pair<String, int> _getDayText(startDate, endDate) {
+    try {
+      final start = DateTime.fromMillisecondsSinceEpoch(startDate.millisecondsSinceEpoch);
+      final end = DateTime.fromMillisecondsSinceEpoch(endDate.millisecondsSinceEpoch);
+      final endDay = end.difference(start).inDays + 1;
+      if (start.isAfter(DateTime.now())) {
+        return Pair('Days to start: ', start.difference(DateTime.now()).inDays + 1);
+      } else if (end.isBefore(DateTime.now())) {
+        return Pair('Days since ended: ', endDay);
+      } else {
+        return Pair('Day: ', day);
+      }
+    } catch (e) {
+      return Pair('Day: ', day);
+    }
+  }
+}
+
+class Pair<K, V> {
+  final K key;
+  final V value;
+
+  Pair(this.key, this.value);
 }
 
 class GradientText extends StatelessWidget {
