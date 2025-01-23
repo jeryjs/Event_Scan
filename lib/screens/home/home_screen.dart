@@ -99,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                       context: context,
                                       builder: (context) => const ManageCategoriesDialog(),
                                     ).then((_) {
-                                      setState(() {}); // Refresh settings screen if needed
+                                      setState(() {}); // Refresh this screen as needed
                                     });
                                   },
                                   icon: const Icon(Icons.add),
@@ -155,7 +155,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         context,
                         MaterialPageRoute(
                             builder: (context) => const SettingsScreen()),
-                      ),
+                      ).then((_) { 
+                        setState(() {}); // Refresh this screen as needed
+                      }),
                     ),
                     _buildBottomButton(
                       context,
