@@ -156,10 +156,10 @@ class Database {
     }, SetOptions(merge: true));
   }
 
-  static Future<void> deleteCategory(String categoryName) async {
+  static Future<void> deleteCategory(String category) async {
     final categoryName = await _getCollection();
     var categories = await getCategories();
-    categories.removeWhere((cat) => cat.name == categoryName);
+    categories.removeWhere((cat) => cat.name == category);
     await _firestore.collection('settings').doc('categories').set({
       categoryName: categories.map((cat) => cat.toMap()).toList(),
     }, SetOptions(merge: true));
