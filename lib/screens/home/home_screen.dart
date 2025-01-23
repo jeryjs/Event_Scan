@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:party_scan/screens/dashboard/dashboard_screen.dart';
 
+import '../settings/manage_categories_dialog.dart';
 import './categories_grid.dart';
 import 'day_header.dart';
 import '../settings/settings_screen.dart';
@@ -72,6 +73,43 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         return const Expanded(child: Center(child: CircularProgressIndicator()));
                       }
                       _categories = snapshot.data!;
+                      if (_categories.isEmpty) {
+                        return Expanded(
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.category_outlined,
+                                  size: 48,
+                                  color: Theme.of(context).disabledColor,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No categories created yet',
+                                  style: TextStyle(
+                                    color: Theme.of(context).disabledColor,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => const ManageCategoriesDialog(),
+                                    ).then((_) {
+                                      setState(() {}); // Refresh settings screen if needed
+                                    });
+                                  },
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Manage Categories'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
                       return Expanded(child: CategoriesGrid(categories: _categories, selectedDay: day));
                     },
                   ),
