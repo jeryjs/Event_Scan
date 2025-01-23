@@ -29,7 +29,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _usersData = widget.usersData.map((user) => Map<String, dynamic>.from(user)).toList();
+    _usersData = widget.usersData.map((user) {
+      final newUser = Map<String, dynamic>.from(user);
+      // Ensure 'extras' is always a Map
+      newUser['extras'] ??= {};
+      return newUser;
+    }).toList();
     _tabController = TabController(length: _usersData.length, vsync: this);
     _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
   }
@@ -41,7 +46,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder);
       } else {
         try {
-          _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
+          final decodedData = jsonDecode(_jsonController.text) as List<dynamic>;
+          _usersData = decodedData.map((user) {
+            final newUser = Map<String, dynamic>.from(user);
+            newUser['extras'] ??= {};
+            return newUser;
+          }).toList();
           _tabController = TabController(length: _usersData.length, vsync: this);
           _jsonError = null;
         } catch (error) {
@@ -51,17 +61,30 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     });
   }
 
+  void _addNewExtraField(int userIndex) {
+    setState(() {
+      if (!_usersData[userIndex]['extras'].containsKey('New Key')) {
+        _usersData[userIndex]['extras']['New Key'] = '';
+      }
+    });
+  }
+
   void _addNewUser() {
     setState(() {
-      _usersData.add({
+      final newUser = {
         'code': '',
-        'name': '',
-        'email': '',
-        'phone': '',
-        'institute': '',
-        'state': '',
-        'designation': '',
-      });
+        'title': '',
+        'subtitle': '',
+        'extras': {},
+      };
+      // Pre-populate with existing keys
+      if (_usersData.isNotEmpty) {
+        final existingKeys = _usersData.first['extras']?.keys ?? [];
+        for (var key in existingKeys) {
+          (newUser['extras'] as Map<dynamic, dynamic>)[key] = '';
+        }
+      }
+      _usersData.add(newUser);
       _tabController = TabController(length: _usersData.length, vsync: this);
       _tabController.animateTo(_usersData.length - 1);
     });
@@ -70,7 +93,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   Future<void> _saveChanges() async {
     if (_isJsonMode) {
       try {
-        _usersData = List<Map<String, dynamic>>.from(jsonDecode(_jsonController.text));
+        final decodedData = jsonDecode(_jsonController.text) as List<dynamic>;
+        _usersData = decodedData.map((user) {
+          final newUser = Map<String, dynamic>.from(user);
+          newUser['extras'] ??= {};
+          return newUser;
+        }).toList();
         _jsonError = null;
       } catch (error) {
         setState(() {
@@ -133,8 +161,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                             ),
                           ],
                         ),
-                        SizedBox(
-                          height: 600,
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 700),
                           child: TabBarView(
                             controller: _tabController,
                             children: _usersData.map((userData) {
@@ -173,64 +201,26 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                     ),
                                     const SizedBox(height: 40),
                                     TextField(
-                                      onChanged: (value) => _usersData[userIndex]['name'] = value,
+                                      onChanged: (value) => _usersData[userIndex]['title'] = value,
                                       decoration: InputDecoration(
-                                        labelText: 'Name',
-                                        prefixIcon: const Icon(Icons.person),
+                                        labelText: 'Title',
+                                        prefixIcon: const Icon(Icons.title),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['name']),
+                                      controller: TextEditingController(text: userData['title']),
                                     ),
                                     const SizedBox(height: 20),
                                     TextField(
-                                      onChanged: (value) => _usersData[userIndex]['email'] = value,
+                                      onChanged: (value) => _usersData[userIndex]['subtitle'] = value,
                                       decoration: InputDecoration(
-                                        labelText: 'Email',
-                                        prefixIcon: const Icon(Icons.email),
+                                        labelText: 'Subtitle',
+                                        prefixIcon: const Icon(Icons.subtitles),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['email']),
+                                      controller: TextEditingController(text: userData['subtitle']),
                                     ),
                                     const SizedBox(height: 20),
-                                    TextField(
-                                      onChanged: (value) => _usersData[userIndex]['phone'] = value,
-                                      decoration: InputDecoration(
-                                        labelText: 'Phone',
-                                        prefixIcon: const Icon(Icons.phone),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      controller: TextEditingController(text: (userData['phone']??"").toString()),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    TextField(
-                                      onChanged: (value) => _usersData[userIndex]['institute'] = value,
-                                      decoration: InputDecoration(
-                                        labelText: 'Institute',
-                                        prefixIcon: const Icon(Icons.school),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      controller: TextEditingController(text: userData['institute']),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    TextField(
-                                      onChanged: (value) => _usersData[userIndex]['state'] = value,
-                                      decoration: InputDecoration(
-                                        labelText: 'State',
-                                        prefixIcon: const Icon(Icons.location_on),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      controller: TextEditingController(text: userData['state']),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    TextField(
-                                      onChanged: (value) => _usersData[userIndex]['designation'] = value,
-                                      decoration: InputDecoration(
-                                        labelText: 'Designation',
-                                        prefixIcon: const Icon(Icons.work),
-                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                      ),
-                                      controller: TextEditingController(text: userData['designation']),
-                                    ),
+                                    _buildExtrasFields(userData, userIndex),
                                   ],
                                 ),
                               );
@@ -265,6 +255,65 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildExtrasFields(Map<String, dynamic> userData, int userIndex) {
+    final extras = (userData['extras'] is Map<String, dynamic>) ? userData['extras'] as Map<String, dynamic> : {};
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final entry in extras.entries) ...[
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    onChanged: (value) {
+                      if (_usersData[userIndex]['extras'].containsKey(value) && value != entry.key) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Duplicate key: $value')),
+                        );
+                        return;
+                      }
+                      final newKey = value;
+                      final oldValue = _usersData[userIndex]['extras'].remove(entry.key);
+                      _usersData[userIndex]['extras'][newKey] = oldValue;
+                    },
+                    decoration: InputDecoration(
+                      labelText: 'Key',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    controller: TextEditingController(text: entry.key),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 3,
+                  child: TextField(
+                    onChanged: (value) => _usersData[userIndex]['extras'][entry.key] = value,
+                    decoration: InputDecoration(
+                      labelText: 'Value',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    controller: TextEditingController(text: entry.value),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+          ],
+          TextButton.icon(
+            onPressed: () => setState(() {
+              _usersData[userIndex]['extras'].removeWhere((key, value) => key == 'New Key');
+              _addNewExtraField(userIndex);
+            }),
+            icon: const Icon(Icons.add),
+            label: const Text('Add Field'),
+          ),
+        ],
       ),
     );
   }

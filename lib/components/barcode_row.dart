@@ -37,7 +37,7 @@ class BarcodeRow extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            barcode.name,
+                            barcode.title,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -51,7 +51,7 @@ class BarcodeRow extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            barcode.designation,
+                            barcode.subtitle,
                             style: TextStyle(
                               color: Colors.grey[600],
                               fontSize: 14,
@@ -129,12 +129,8 @@ class BarcodeRow extends StatelessWidget {
                   children: [
                     _buildDetailHeader(),
                     const Divider(height: 32),
-                    _buildDetailRow(Icons.email, barcode.email),
-                    _buildDetailRow(Icons.phone, barcode.phone),
-                    _buildDetailRow(Icons.location_on, barcode.state),
-                    _buildDetailRow(Icons.business, barcode.institute),
-                    _buildDetailRow(Icons.access_time, barcode.timestamp.toDate().toString()),
-                    const SizedBox(height: 16),
+                    ...barcode.extras.entries.map((entry) => _buildDetailRow(Icons.view_comfy_alt_outlined, entry.value)),
+                    const Divider(height: 32),
                     _buildScannedCategories(context),
                   ],
                 ),
@@ -157,11 +153,21 @@ class BarcodeRow extends StatelessWidget {
     return Column(
       children: [
         Text(
-          barcode.name,
+          barcode.title,
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          barcode.subtitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey,
           ),
         ),
         const SizedBox(height: 8),
@@ -201,7 +207,7 @@ class BarcodeRow extends StatelessWidget {
       children: barcode.scanned.entries.map((entry) {
         CategoryModel category;
         try { category = categories.firstWhere((cat) => cat.name == entry.key); } catch (e) { return Container(); }
-        final dayColor = dayColors[entry.value.first];
+        final dayColor = dayColors[entry.value.first % dayColors.length];
         return Chip(
           avatar: Icon(category.icon.data, color: dayColor),
           label: Text('${entry.key} - Days ${entry.value.join(", ")}'),

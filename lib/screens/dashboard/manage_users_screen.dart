@@ -24,9 +24,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     setState(() {
       searchQuery = query;
       filteredUsers = widget.users.where((user) {
-        return user['name'].toString().toLowerCase().contains(query.toLowerCase()) ||
-               user['code'].toString().toLowerCase().contains(query.toLowerCase()) ||
-               user['phone'].toString().contains(query);
+        return user['title'].toString().toLowerCase().contains(query.toLowerCase()) ||
+               user['subtitle'].toString().toLowerCase().contains(query.toLowerCase()) ||
+               user['extras'].values.any((value) => value.toString().toLowerCase().contains(query.toLowerCase())) ||
+               user['code'].toString().toLowerCase().contains(query.toLowerCase());
       }).toList();
     });
   }
@@ -71,10 +72,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   elevation: 4,
                   child: ListTile(
                     leading: CircleAvatar(
-                      child: Text(user['code']?.substring(user['code'].length - 3) ?? ''),
+                      child: Text(
+                        (user['code']?.length ?? 0) > 3 ? user['code'].substring(user['code'].length - 3) : user['code'] ?? '',
+                      ),
                     ),
-                    title: Text(user['name'] ?? ''),
-                    subtitle: Text('Code: ${user['code'] ?? ''}\nDesignation: ${user['designation'] ?? ''}'),
+                    title: Text(user['title'] ?? ''),
+                    subtitle: Text('Code: ${user['code'] ?? ''}\n${user['subtitle'] ?? '-'}'),
                     trailing: IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () {
@@ -88,7 +91,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                       context: context,
                       builder: (context) => AlertDialog(
                         title: const Text('Delete User'),
-                        content: Text('Are you sure you want to delete ${user['name']}?'),
+                        content: Text('Are you sure you want to delete ${user['title']}?'),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),

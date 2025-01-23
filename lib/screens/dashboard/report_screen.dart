@@ -235,10 +235,10 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
               ),
             ),
             title: Text(
-              user['name'] ?? '',
+              user['title'] ?? '',
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(user['designation'] ?? ''),
+            subtitle: Text(user['subtitle'] ?? ''),
             children: [
               _buildUserDetails(user, scanned),
             ],
@@ -269,15 +269,19 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
   }
 
   Widget _buildUserDetails(Map<String, dynamic> user, Map<String, dynamic> scanned) {
+    final rawExtras = user['extras'] ?? {};
+    final extras = (rawExtras is Map)
+      ? rawExtras.map<String, dynamic>((k, v) => MapEntry(k.toString(), v))
+      : <String, dynamic>{};
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow(Icons.phone, user['phone'] ?? 'N/A'),
-          _buildInfoRow(Icons.email, user['email'] ?? 'N/A'),
-          _buildInfoRow(Icons.location_on, user['state'] ?? 'N/A'),
-          _buildInfoRow(Icons.business, user['institute'] ?? 'N/A'),
+          for (final field in extras.entries) ...[
+            _buildInfoRow(Icons.info, '${field.key}: ${field.value}'),
+          ],
           const Divider(),
           _buildCategoryGrid(scanned),
         ],
@@ -380,7 +384,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
   List<Map<String, dynamic>> _filterUsers() {
     return widget.users.where((user) {
-      var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+      final scanned = user['scanned'] as Map<String, dynamic>? ?? {};
       bool scannedOnDay = false;
       if (_selectedCategory == 'All') {
         for (var days in scanned.values) {
@@ -393,10 +397,16 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         var days = scanned[_selectedCategory] as List<dynamic>? ?? [];
         scannedOnDay = days.isNotEmpty && (widget.selectedDay == 0 || days.contains(widget.selectedDay));
       }
+
+      final extras = user['extras'] as Map<String, dynamic>? ?? {};
+      bool extrasMatch = extras.values.any((value) =>
+        value?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false
+      );
+
       return scannedOnDay && (
-        (user['name']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false) ||
-        (user['code']?.toLowerCase().contains(_searchQuery) ?? false) ||
-        (user['phone']?.toString().contains(_searchQuery) ?? false)
+        (user['title']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)
+        || (user['code']?.toLowerCase().contains(_searchQuery) ?? false)
+        || extrasMatch
       );
     }).toList();
   }
@@ -405,33 +415,61 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     setState(() => _isExporting = true);
     var excel = Excel.createExcel();
 
-    // All Days sheet
+    // Gather all extras keys
+    final allExtrasKeys = widget.users.fold<Set<String>>({}, (keys, user) {
+      final extras = user['extras'] as Map<String, dynamic>? ?? {};
+      return keys..addAll(extras.keys);
+    }).toList();
+
+    // Create "All Days" sheet with dynamic extras
     excel.rename("Sheet1", "All Days");
     final allDaysSheet = excel['All Days'];
 
-    final headers = ['Code', 'Name', 'Attendance', 'Phone', 'Mail', 'Designation', 'State', 'Institute'];
+    // Headers: code, title, subtitle, dynamic extras, attendance
+    final headers = ['Code', 'Title', 'Subtitle', ...allExtrasKeys, 'Attendance'];
     for (var header in headers) {
-      final headerCell = allDaysSheet.cell(CellIndex.indexByColumnRow(columnIndex: headers.indexOf(header), rowIndex: 0));
-      headerCell.value = TextCellValue(header);
-      headerCell.cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
-      header == 'Attendance' ? allDaysSheet.setColumnWidth(headerCell.columnIndex, 30) : allDaysSheet.setColumnAutoFit(headerCell.columnIndex);
+      final headerCell = allDaysSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: headers.indexOf(header),
+        rowIndex: 0,
+      ));
+      headerCell
+        ..value = TextCellValue(header)
+        ..cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
+      allDaysSheet.setColumnAutoFit(headerCell.columnIndex);
     }
 
+    // Fill rows
     for (final user in widget.users) {
-      allDaysSheet.appendRow(
-        ['code', 'name', 'phone', 'email', 'designation', 'state', 'institute']
-          .map((key) => TextCellValue(user[key]?.toString() ?? '')).toList()
-      );
-      
-      final attendanceCell = allDaysSheet.cell(CellIndex.indexByColumnRow(columnIndex: headers.indexOf("Attendance"), rowIndex: allDaysSheet.maxRows - 1));
-      attendanceCell..value = TextCellValue(widget.categories
+      // Build row with code, title, subtitle, dynamic extras
+      final rowValues = <TextCellValue>[
+        TextCellValue(user['code']?.toString() ?? ''),
+        TextCellValue(user['title']?.toString() ?? ''),
+        TextCellValue(user['subtitle']?.toString() ?? ''),
+      ];
+      final extras = user['extras'] as Map<String, dynamic>? ?? {};
+      for (var key in allExtrasKeys) {
+        rowValues.add(TextCellValue(extras[key]?.toString() ?? ''));
+      }
+
+      // Attendance
+      final categoriesScanned = widget.categories
           .where((c) => ((user['scanned'] ?? {})[c.name] ?? []).isNotEmpty)
           .map((c) => '${c.name} - Days ${((user['scanned'] ?? {})[c.name] ?? []).join(", ")}')
-          .join('\n'))
-        ..cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
+          .join('\n');
+
+      rowValues.add(TextCellValue(categoriesScanned));
+      allDaysSheet.appendRow(rowValues);
+
+      // Wrap text for attendance cell
+      final attendanceIndex = headers.indexOf('Attendance');
+      final attendanceCell = allDaysSheet.cell(CellIndex.indexByColumnRow(
+        columnIndex: attendanceIndex,
+        rowIndex: allDaysSheet.maxRows - 1,
+      ));
+      attendanceCell.cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
     }
 
-    // Individual day sheets
+    // Individual day sheets (rename "Name" -> "Title")
     var settings = await Database.getSettings();
     DateTime startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
     DateTime endDate = (settings['endDate'] as Timestamp?)?.toDate() ?? DateTime.now().add(const Duration(days: 7));
@@ -439,22 +477,26 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
     for (int day = 1; day <= totalDays; day++) {
       final daySheet = excel['Day $day'];
-
-      final headers = ['Code', 'Name', ...widget.categories.map((c) => c.name)];
-      for (var header in headers) {
-        final headerCell = daySheet.cell(CellIndex.indexByColumnRow(columnIndex: headers.indexOf(header), rowIndex: 0));
-        headerCell.value = TextCellValue(header);
-        headerCell.cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
+      final dayHeaders = ['Code', 'Title', ...widget.categories.map((c) => c.name)];
+      for (var header in dayHeaders) {
+        final headerCell = daySheet.cell(CellIndex.indexByColumnRow(
+          columnIndex: dayHeaders.indexOf(header),
+          rowIndex: 0,
+        ));
+        headerCell
+          ..value = TextCellValue(header)
+          ..cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
         daySheet.setColumnAutoFit(headerCell.columnIndex);
       }
-
       for (final user in widget.users) {
-        daySheet.appendRow([TextCellValue(user['code'].toString()), TextCellValue(user['name'] ?? '')]);
-        
+        daySheet.appendRow([
+          TextCellValue(user['code']?.toString() ?? ''),
+          TextCellValue(user['title']?.toString() ?? ''),
+        ]);
         for (final category in widget.categories) {
           final days = (user['scanned'] ?? {})[category.name] as List<dynamic>? ?? [];
           final cell = daySheet.cell(CellIndex.indexByColumnRow(
-            columnIndex: headers.indexOf(category.name),
+            columnIndex: dayHeaders.indexOf(category.name),
             rowIndex: daySheet.maxRows - 1,
           ));
           cell..value = IntCellValue(days.contains(day) ? 1 : 0)

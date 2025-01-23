@@ -47,13 +47,10 @@ class Database {
       }
 
       return {
-        'name': data['name'],
         'code': data['code'],
-        'email': data['email'],
-        'phone': data['phone'],
-        'institute': data['institute'],
-        'state': data['state'],
-        'designation': data['designation'],
+        'title': data['title'],
+        'subtitle': data['subtitle'],
+        'extras': data['extras'],
         'scanned': scanned,
         'isScanned': isScanned,
       };
@@ -183,12 +180,11 @@ class Database {
       final docRef = _firestore.collection(collection).doc(userData['code']);
       batch.set(docRef, {
         'code': userData['code'],
-        'name': userData['name'],
-        'email': userData['email'],
-        'phone': userData['phone'],
-        'institute': userData['institute'],
-        'state': userData['state'],
-        'designation': userData['designation'],
+        'title': userData['title'],
+        'subtitle': userData['subtitle'],
+        'extras': userData['extras'] ?? {},
+        'scanned': userData['scanned'] ?? {},
+        'timestamp': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
 

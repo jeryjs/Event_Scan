@@ -64,18 +64,14 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final name = widget.result?['name'] ?? 'Unknown';
-    final code = widget.result?['code'] ?? 'Unknown';
-    final mail = widget.result?['email'] ?? 'Unknown';
-    final phone = widget.result?['phone'] ?? 'Unknown';
-    final institute = widget.result?['institute'] ?? 'Unknown';
-    final state = widget.result?['state'] ?? 'Unknown';
-    final designation = widget.result?['designation'] ?? 'Unknown';
+    final title = widget.result?['title'] ?? 'Unknown';
+    final subtitle = widget.result?['subtitle'] ?? 'Unknown';
+    final extras = (widget.result?['extras'] as Map<String, dynamic>?) ?? {};
     final scanned = Map<String, dynamic>.from(widget.result?['scanned'] ?? {});
     final isScanned = widget.result?['isScanned'];
 
-    // Show edit dialog if name is empty
-    if (name == 'Unknown') {
+    // Show edit dialog if title is empty
+    if (title == 'Unknown') {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
@@ -118,13 +114,10 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                       Text(alertTitle, style: const TextStyle(color: Colors.white, fontSize: 26)),
                     ],
                   ),
-                  Text("Code: $code"),
-                  Text("Name: $name"),
-                  Text("Mail: $mail"),
-                  Text("Phone: $phone"),
-                  Text("Institute: $institute"),
-                  Text("State: $state"),
-                  Text("Designation: $designation"),
+                  Text("Code: ${widget.barcode}"),
+                  Text("Title: $title"),
+                  Text("Subtitle: $subtitle"),
+                  ...extras.entries.map((entry) => Text('${entry.key}: ${entry.value}')),
                   const SizedBox(height: 8),
                   _buildScannedDays(scanned),
                 ],
