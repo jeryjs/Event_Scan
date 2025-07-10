@@ -75,7 +75,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
       SchedulerBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
-          builder: (context) => EditUserDialog(usersData: [widget.result ?? {}]),
+          builder: (context) => EditUserDialog(usersData: [widget.result ?? {}], canEditMultiple: false),
         );
       });
     }

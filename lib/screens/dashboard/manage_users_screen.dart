@@ -108,10 +108,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                   subtitle: Text('Code: ${user['code'] ?? ''}\n${user['subtitle'] ?? '-'}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () => showDialog(
-                      context: context,
-                      builder: (context) => EditUserDialog(usersData: [user]),
-                    ),
+                    onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
                   ),
                   onLongPress: () => showDialog(
                     context: context,

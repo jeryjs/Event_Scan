@@ -5,8 +5,9 @@ import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
   final List<Map<String, dynamic>> usersData;
+  final bool canEditMultiple;
 
-  const EditUserDialog({super.key, required this.usersData});
+  const EditUserDialog({super.key, required this.usersData, required this.canEditMultiple});
 
   @override
   State<EditUserDialog> createState() => _EditUserDialogState();
@@ -39,6 +40,54 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
   }
 
+  @override
+  void dispose() {
+    _newKeyController.dispose();
+    _newKeyFocus.dispose();
+    for (var node in _valueFocusNodes.values) {
+      node.dispose();
+    }
+    super.dispose();
+  }
+
+  void _startAddingField() {
+    setState(() {
+      _isAddingField = true;
+      _newKeyController.clear();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _newKeyFocus.requestFocus();
+    });
+  }
+
+  void _cancelAddingField() {
+    setState(() {
+      _isAddingField = false;
+    });
+  }
+
+  void _submitNewKey(int userIndex) {
+    final key = _newKeyController.text.trim();
+    if (key.isEmpty) {
+      _cancelAddingField();
+      return;
+    }
+    if (_usersData[userIndex]['extras'].containsKey(key)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Key "$key" already exists')),
+      );
+      return;
+    }
+    setState(() {
+      _usersData[userIndex]['extras'][key] = '';
+      _isAddingField = false;
+      _valueFocusNodes[key] = FocusNode();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _valueFocusNodes[key]?.requestFocus();
+    });
+  }
+
   void _toggleMode() {
     setState(() {
       _isJsonMode = !_isJsonMode;
@@ -61,13 +110,10 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     });
   }
 
-  void _addNewExtraField(int userIndex) {
-    setState(() {
-      if (!_usersData[userIndex]['extras'].containsKey('New Key')) {
-        _usersData[userIndex]['extras']['New Key'] = '';
-      }
-    });
-  }
+  bool _isAddingField = false;
+  final TextEditingController _newKeyController = TextEditingController();
+  final FocusNode _newKeyFocus = FocusNode();
+  final Map<String, FocusNode> _valueFocusNodes = {};
 
   void _addNewUser() {
     setState(() {
@@ -118,31 +164,39 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     return Dialog(
       child: Container(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Edit Attendees', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: Icon(_isJsonMode ? Icons.view_compact : Icons.code),
-                    onPressed: _toggleMode,
-                  ),
-                ],
-              ),
-              _isJsonMode
-                  ? TextField(
-                      controller: _jsonController,
-                      maxLines: 15,
-                      decoration: const InputDecoration(
-                        hintText: 'Enter JSON data here',
-                        border: OutlineInputBorder(),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.8,
+          maxWidth: MediaQuery.of(context).size.width * 0.9,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Edit Attendees', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                IconButton(
+                  icon: Icon(_isJsonMode ? Icons.view_compact : Icons.code),
+                  onPressed: _toggleMode,
+                ),
+              ],
+            ),
+            Flexible(
+              child: _isJsonMode
+                  ? SingleChildScrollView(
+                      child: TextField(
+                        controller: _jsonController,
+                        maxLines: null,
+                        decoration: const InputDecoration(
+                          hintText: 'Enter JSON data here',
+                          border: OutlineInputBorder(),
+                        ),
                       ),
                     )
                   : Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        if (widget.canEditMultiple)
                         Row(
                           children: [
                             Expanded(
@@ -154,22 +208,22 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                 ),
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.add_circle),
-                              onPressed: _addNewUser,
-                              tooltip: 'Add Attendee',
-                            ),
+                              IconButton(
+                                icon: const Icon(Icons.add_circle),
+                                onPressed: _addNewUser,
+                                tooltip: 'Add Attendee',
+                              ),
                           ],
                         ),
-                        ConstrainedBox(
-                          constraints: const BoxConstraints(maxHeight: 700),
+                        Flexible(
                           child: TabBarView(
                             controller: _tabController,
                             children: _usersData.map((userData) {
                               int userIndex = _usersData.indexOf(userData);
-                              return Padding(
+                              return SingleChildScrollView(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Column(
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Container(
                                       padding: const EdgeInsets.all(12),
@@ -229,31 +283,33 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                         ),
                       ],
                     ),
-              if (_isJsonMode && _jsonError != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    _jsonError!,
-                    style: const TextStyle(color: Colors.red),
-                  ),
+            ),
+            if (_isJsonMode && _jsonError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  _jsonError!,
+                  style: const TextStyle(color: Colors.red),
                 ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.cancel),
-                    label: const Text('Cancel'),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: _saveChanges,
-                    icon: const Icon(Icons.save),
-                    label: const Text('Save'),
-                  ),
-                ],
               ),
-            ],
-          ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.cancel),
+                  label: const Text('Cancel'),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: _saveChanges,
+                  icon: const Icon(Icons.save),
+                  label: const Text('Save'),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -261,67 +317,80 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
 
   Widget _buildExtrasFields(Map<String, dynamic> userData, int userIndex) {
     final extras = (userData['extras'] is Map<String, dynamic>) ? userData['extras'] as Map<String, dynamic> : {};
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final entry in extras.entries) ...[
-            Row(
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextField(
-                    onChanged: (value) {
-                      if (_usersData[userIndex]['extras'].containsKey(value) && value != entry.key) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Duplicate key: $value')),
-                        );
-                        return;
-                      }
-                      final newKey = value;
-                      final oldValue = _usersData[userIndex]['extras'].remove(entry.key);
-                      _usersData[userIndex]['extras'][newKey] = oldValue;
-                    },
-                    decoration: InputDecoration(
-                      labelText: 'Key',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    controller: TextEditingController(text: entry.key),
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // if (extras.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text('Custom Fields', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+        // ],
+        for (final entry in extras.entries) ...[
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              TextField(
+                focusNode: _valueFocusNodes[entry.key],
+                onChanged: (value) => _usersData[userIndex]['extras'][entry.key] = value,
+                decoration: InputDecoration(labelText: entry.key, border: InputBorder.none, focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))),
+                controller: TextEditingController(text: entry.value),
+              ),
+              if (_valueFocusNodes[entry.key]?.hasFocus == true)
+              Positioned(
+                right: -20,
+                top: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _usersData[userIndex]['extras'].remove(entry.key);
+                      _valueFocusNodes[entry.key]?.dispose();
+                      _valueFocusNodes.remove(entry.key);
+                    });
+                  },
+                  tooltip: 'Remove field',
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 3,
-                  child: TextField(
-                    onChanged: (value) => _usersData[userIndex]['extras'][entry.key] = value,
-                    decoration: InputDecoration(
-                      labelText: 'Value',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    controller: TextEditingController(text: entry.value),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-          ],
-          TextButton.icon(
-            onPressed: () => setState(() {
-              _usersData[userIndex]['extras'].removeWhere((key, value) => key == 'New Key');
-              _addNewExtraField(userIndex);
-            }),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Field'),
+              ),
+            ],
           ),
+          const SizedBox(height: 12),
         ],
-      ),
+        if (_isAddingField) ...[
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _newKeyController,
+                  focusNode: _newKeyFocus,
+                  onSubmitted: (_) => _submitNewKey(userIndex),
+                  decoration: InputDecoration(labelText: 'Enter key name'),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _cancelAddingField,
+                tooltip: 'Cancel',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+        ],
+        TextButton.icon(
+          onPressed: _isAddingField ? null : () => _startAddingField(),
+          icon: const Icon(Icons.add),
+          label: const Text('Add Field'),
+        ),
+      ],
     );
   }
 }
 
-Future<dynamic> showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData) async {
+Future showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData, {
+  bool canEditMultiple = true,
+}) async {
   return showDialog(
     context: context,
-    builder: (context) => EditUserDialog(usersData: usersData),
+    builder: (context) => EditUserDialog(usersData: usersData, canEditMultiple: canEditMultiple),
   );
 }
