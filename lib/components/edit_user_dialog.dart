@@ -125,7 +125,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Edit Users', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Edit Attendees', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   IconButton(
                     icon: Icon(_isJsonMode ? Icons.view_compact : Icons.code),
                     onPressed: _toggleMode,
@@ -150,14 +150,14 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                 controller: _tabController,
                                 isScrollable: true,
                                 tabs: List.generate(_usersData.length, 
-                                  (index) => Tab(text: 'User ${index + 1}')
+                                  (index) => Tab(text: 'Attendee ${index + 1}')
                                 ),
                               ),
                             ),
                             IconButton(
                               icon: const Icon(Icons.add_circle),
                               onPressed: _addNewUser,
-                              tooltip: 'Add User',
+                              tooltip: 'Add Attendee',
                             ),
                           ],
                         ),

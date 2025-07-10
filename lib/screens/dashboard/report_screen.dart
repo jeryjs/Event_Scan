@@ -162,7 +162,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                 size: 100,
                 color: Colors.grey.shade400,
               ),
-              const Text('No users found'),
+              const Text('No attendees found'),
             ],
           ),
         ),

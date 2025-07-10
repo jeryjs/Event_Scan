@@ -210,7 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
           ),
           children: [
             _buildAnimatedStatCard(
-                'Total Users',
+                'Total Attendees',
                 _selectedDay == 0
                     ? _calculateTotalUsers()
                     : _calculateActiveUsers(),
@@ -332,7 +332,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   Widget _buildActionButtons() {
     return Padding(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Wrap(
         spacing: 20,
         runSpacing: 20,
@@ -340,36 +340,24 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
         children: [
           ElevatedButton.icon(
             icon: const Icon(Icons.import_export),
-            label: const Text('Import Users'),
+            label: const Text('Import Attendees'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const EditUserDialog(usersData: [{}]),
-              );
-            },
+            onPressed: () => showDialog(context: context, builder: (context) => const EditUserDialog(usersData: [{}])),
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.manage_accounts),
-            label: const Text('Manage Users'),
+            label: const Text('Manage Attendees'),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: _manageExistingUsers,
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users))),
           ),
         ],
       ),
-    );
-  }
-
-  void _manageExistingUsers() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users)),
     );
   }
 }
