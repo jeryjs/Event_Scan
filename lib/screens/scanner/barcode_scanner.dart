@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:party_scan/models/category_model.dart';
-import 'package:party_scan/services/sound_manager.dart';
+import 'package:event_scan/models/category_model.dart';
+import 'package:event_scan/services/sound_manager.dart';
 
 import '../../services/database.dart';
 import 'result_dialog.dart';

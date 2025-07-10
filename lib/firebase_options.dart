@@ -54,7 +54,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAT_HYIUd_Bgfg4uot94hyOw7-6tZZJdVA',
-    appId: '1:1012516305334:android:b0e32e0f4da4f1b9e8a917',
+    appId: '1:1012516305334:android:75027e473812cdb1e8a917',
     messagingSenderId: '1012516305334',
     projectId: 'partyscan-c9c01',
     storageBucket: 'partyscan-c9c01.appspot.com',

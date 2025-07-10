@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:party_scan/models/category_model.dart';
+import 'package:event_scan/models/category_model.dart';
 import '../../services/database.dart';
 import '../../components/barcode_list.dart';
 

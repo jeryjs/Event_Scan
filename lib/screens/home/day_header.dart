@@ -1,6 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:party_scan/services/database.dart';
+import 'package:event_scan/services/database.dart';
 class DayHeader extends StatelessWidget {
   final int day;
   // Future<Map<String, dynamic>> settings;

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/collection/collection_selection_screen.dart';
+import 'services/collection_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -10,9 +12,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // Database.setUpBarcodes('assets/barcodes_ce.txt', 'ce', 'FreshersParty_2024');
-  // Database.setUpBarcodes('assets/barcodes_se.txt', 'se', 'FreshersParty_2024');
-  // Database.setUpBarcodes('assets/barcodes.txt', 'se', 'barcodes');
+  // Load saved collection
+  await CollectionManager.loadSavedCollection();
   
   runApp(const MyApp());
 }
@@ -29,7 +30,9 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const HomeScreen(),
+      home: CollectionManager.currentCollection != null 
+          ? const HomeScreen() 
+          : const CollectionSelectionScreen(),
     );
   }
 }

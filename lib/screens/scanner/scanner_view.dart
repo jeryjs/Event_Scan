@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:party_scan/models/category_model.dart';
-import 'package:party_scan/screens/scanner/bottom_bar.dart';
+import 'package:event_scan/models/category_model.dart';
+import 'package:event_scan/screens/scanner/bottom_bar.dart';
 import 'barcode_scanner.dart';
 
 class ScannerView extends StatelessWidget {

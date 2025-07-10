@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:party_scan/services/database.dart';
+import 'package:event_scan/services/database.dart';
 import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {

@@ -1,36 +1,39 @@
-name: party_scan
+name: event_scan
 description: "An app designed to streamline barcode scanning at events like freshers' parties or Multi Day Programs. Ensures smooth and efficient entry management using Firestore database by checking whether tickets have been scanned before with real-time sync between devices."
 publish_to: 'none'
 version: 3.0.0+13
 
 environment:
-  sdk: ^3.5.0
+  sdk: ^3.8.1
 
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
   firebase_core: ^3.3.0
   cloud_firestore: ^5.2.1
   audioplayers: ^6.0.0
-  mobile_scanner: ^5.1.1
-  flutter_launcher_icons: ^0.13.1
+  mobile_scanner: ^7.0.1
+  flutter_launcher_icons: ^0.14.4
   flutter_iconpicker: ^4.0.1
   flutter_colorpicker: ^1.1.0
   flutter_staggered_animations: ^1.1.1
-  flutter_slidable: ^3.1.1
-  file_picker: 8.1.4
+  flutter_slidable: ^4.0.0
+  file_picker: ^10.2.0
   excel: ^4.0.6
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
 
   assets:
     - assets/
+    - assets/launcher_icons/
     - assets/sounds/
 
 ### flutter pub run flutter_launcher_icons

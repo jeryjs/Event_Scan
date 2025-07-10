@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:party_scan/screens/dashboard/dashboard_screen.dart';
+import 'package:event_scan/screens/dashboard/dashboard_screen.dart';
 
 import '../settings/manage_categories_dialog.dart';
 import './categories_grid.dart';

@@ -42,7 +42,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 assets/barcodes.txt
-android/app/google-services.json
+# android/app/google-services.json
 assets/barcodes_ce.txt
 assets/barcodes_se.txt
 

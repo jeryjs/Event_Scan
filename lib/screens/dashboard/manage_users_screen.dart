@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:party_scan/services/database.dart';
+import 'package:event_scan/services/database.dart';
 import '../../components/edit_user_dialog.dart';
 
 class ManageUsersScreen extends StatefulWidget {

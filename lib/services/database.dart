@@ -2,30 +2,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/category_model.dart';
+import 'collection_manager.dart';
 
 class Database {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static Future<String> _getCollection() async {
-    var settings = await getSettings();
-    return settings['collectionName'] ?? 'FDP_2024';
+  static String _getCurrentCollection() {
+    final collection = CollectionManager.currentCollection;
+    if (collection == null) {
+      throw Exception('No collection selected. Please select a collection first.');
+    }
+    return collection;
   }
 
   static Future<Map<String, dynamic>> getSettings() async {
-    var snapshot = await _firestore.collection('settings').doc('config').get();
-    if (snapshot.exists) {
-      return snapshot.data() as Map<String, dynamic>;
+    try {
+      final collection = _getCurrentCollection();
+      var snapshot = await _firestore.collection(collection).doc('.config').get();
+      if (snapshot.exists) {
+        return snapshot.data() as Map<String, dynamic>;
+      }
+      return {};
+    } catch (e) {
+      debugPrint('Error getting settings: $e');
+      return {};
     }
-    return {};
   }
 
   static Future<void> saveSettings(Map<String, dynamic> settings) async {
-    await _firestore.collection('settings').doc('config').set(settings, SetOptions(merge: true));
+    final collection = _getCurrentCollection();
+    await CollectionManager.updateCollectionConfig(collection, settings);
   }
 
   static Future<Map<String, dynamic>?> checkBarcode(String barcode, String category) async {
+    final collection = _getCurrentCollection();
     var settings = await getSettings();
-    final collection = settings['collectionName'] ?? 'FDP_2024';
     final startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
     final currentDay = DateTime.now().difference(startDate).inDays + 1;
 
@@ -59,7 +70,7 @@ class Database {
   }
 
   static Future<Stream<QuerySnapshot>> getBarcodes({required String category, required bool isScanned, required int selectedDay}) async {
-    final collection = await _getCollection();
+    final collection = _getCurrentCollection();
     if (isScanned) {
       return _firestore
           .collection(collection)
@@ -73,7 +84,7 @@ class Database {
   }
 
   static Future<void> resetBarcode(String barcode, String category) async {
-    final collection = await _getCollection();
+    final collection = _getCurrentCollection();
     var docRef = _firestore.collection(collection).doc(barcode);
     var doc = await docRef.get();
 
@@ -93,7 +104,7 @@ class Database {
     if (!kDebugMode) return;
 
     final batch = _firestore.batch();
-    final collection = await _getCollection();
+    final collection = _getCurrentCollection();
 
     final fileString = await rootBundle.loadString(path);
     final barcodes = fileString.split("\n").map((line) => line.trim()).toList();
@@ -134,47 +145,60 @@ class Database {
   }
 
   static Future<List<CategoryModel>> getCategories() async {
-    final categoryName = await _getCollection();
-    var snapshot = await _firestore.collection('settings').doc('categories').get();
-    if (snapshot.exists) {
-      var data = snapshot.data() as Map<String, dynamic>;
-      var categoriesData = List<Map<String, dynamic>>.from(data[categoryName] ?? []);
-      return categoriesData.map((catData) => CategoryModel.fromMap(catData)).toList();
+    try {
+      final collection = _getCurrentCollection();
+      var snapshot = await _firestore.collection(collection).doc('.config').get();
+      if (snapshot.exists) {
+        var data = snapshot.data() as Map<String, dynamic>;
+        var categoriesData = List<Map<String, dynamic>>.from(data['categories'] ?? []);
+        return categoriesData.map((catData) => CategoryModel.fromMap(catData)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error getting categories: $e');
+      return [];
     }
-    return [];
   }
 
   static Future<void> addCategory(CategoryModel category) async {
-    final categoryName = await _getCollection();
+    final collection = _getCurrentCollection();
     var categories = await getCategories();
     categories.add(category);
-    await _firestore.collection('settings').doc('categories').set({
-      categoryName: categories.map((cat) => cat.toMap()).toList(),
+    await _firestore.collection(collection).doc('.config').set({
+      'categories': categories.map((cat) => cat.toMap()).toList(),
     }, SetOptions(merge: true));
   }
 
   static Future<void> deleteCategory(String category) async {
-    final categoryName = await _getCollection();
+    final collection = _getCurrentCollection();
     var categories = await getCategories();
     categories.removeWhere((cat) => cat.name == category);
-    await _firestore.collection('settings').doc('categories').set({
-      categoryName: categories.map((cat) => cat.toMap()).toList(),
+    await _firestore.collection(collection).doc('.config').set({
+      'categories': categories.map((cat) => cat.toMap()).toList(),
     }, SetOptions(merge: true));
   }
 
   static Future<Stream<QuerySnapshot<Object?>>> getBarcodesStream() async {
+    final collection = _getCurrentCollection();
     return _firestore
-        .collection(await _getCollection())
+        .collection(collection)
         .snapshots();
   }
 
   static Stream<DocumentSnapshot> getSettingsStream() {
-    return _firestore.collection('settings').doc('config').snapshots();
+    try {
+      final collection = _getCurrentCollection();
+      return _firestore.collection(collection).doc('.config').snapshots();
+    } catch (e) {
+      debugPrint('Error getting settings stream: $e');
+      // Return a stream that emits an empty document snapshot
+      return const Stream.empty();
+    }
   }
 
   static Future<void> updateUsers(List<Map<String, dynamic>> usersData) async {
     final batch = _firestore.batch();
-    final collection = await _getCollection();
+    final collection = _getCurrentCollection();
 
     for (var userData in usersData) {
       final docRef = _firestore.collection(collection).doc(userData['code']);
@@ -196,11 +220,12 @@ class Database {
   }
 
   static Future<QuerySnapshot> getUsers() async {
-    final collection = await _getCollection();
+    final collection = _getCurrentCollection();
     return _firestore.collection(collection).get();
   }
 
   static Future<void> deleteUser(String id) async {
-    return _firestore.collection(await _getCollection()).doc(id).delete();
+    final collection = _getCurrentCollection();
+    return _firestore.collection(collection).doc(id).delete();
   }
 }

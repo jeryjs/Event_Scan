@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:party_scan/models/category_model.dart';
+import 'package:event_scan/models/category_model.dart';
 import '../scanner/scanner_view.dart';
 
 class CategoriesGrid extends StatelessWidget {

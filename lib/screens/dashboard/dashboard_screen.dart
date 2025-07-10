@@ -69,7 +69,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     // Load users from Firebase once
     QuerySnapshot snapshot = await Database.getUsers();
     setState(() {
-      _users = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+      // Filter out system documents that start with '.'
+      _users = snapshot.docs
+          .where((doc) => !doc.id.startsWith('.'))
+          .map((doc) => doc.data() as Map<String, dynamic>)
+          .toList();
       _isLoading = false;
     });
     _updateCategoryCounts();

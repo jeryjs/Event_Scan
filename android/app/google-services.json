@@ -2,14 +2,14 @@
   "project_info": {
     "project_number": "1012516305334",
     "project_id": "partyscan-c9c01",
-    "storage_bucket": "partyscan-c9c01.appspot.com"
+    "storage_bucket": "partyscan-c9c01.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1012516305334:android:b0e32e0f4da4f1b9e8a917",
+        "mobilesdk_app_id": "1:1012516305334:android:75027e473812cdb1e8a917",
         "android_client_info": {
-          "package_name": "com.jery.party_scan"
+          "package_name": "com.jery.event_scan"
         }
       },
       "oauth_client": [],

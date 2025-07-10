@@ -60,10 +60,15 @@ Event Scan is a modern Flutter-based app designed to streamline barcode scanning
    ```
 
 3. **Configure Firebase**:
-   - Set up your Firebase project and add your `google-services.json` and `GoogleService-Info.plist` to the appropriate directories.
+   - Set up your Firebase project and add your `google-services.json` to the appropriate directories.
    - Make sure Firestore rules are configured to allow read and write access as needed.
 
-4. **Run the App**:
+4. **Generate icons pack**:
+   ```bash
+   dart run flutter_iconpicker:generate_packs --packs material
+   ```
+
+5. **Run the App**:
    ```bash
    flutter run
    ```

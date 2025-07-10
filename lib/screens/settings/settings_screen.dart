@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/database.dart';
+import '../../services/collection_manager.dart';
+import '../collection/collection_selection_screen.dart';
 import 'manage_categories_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -11,7 +13,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final _collectionNameController = TextEditingController();
   final _eventTitleController = TextEditingController();
   DateTime? _startDate;
   DateTime? _endDate;
@@ -26,7 +27,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     var settings = await Database.getSettings();
-    _collectionNameController.text = settings['collectionName'] ?? 'FDP_2024';
     _eventTitleController.text = settings['eventTitle'] ?? 'Event Scan';
     _startDate = settings['startDate'] != null
         ? (settings['startDate'] as Timestamp).toDate()
@@ -50,7 +50,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _isSaving = true;
     });
     await Database.saveSettings({
-      'collectionName': _collectionNameController.text.trim(),
       'eventTitle': _eventTitleController.text.trim(),
       'startDate': Timestamp.fromDate(_startDate!),
       'endDate': Timestamp.fromDate(_endDate!),
@@ -63,6 +62,36 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _isSaving = false;
     });
+  }
+
+  Future<void> _switchCollection() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Switch Collection'),
+        content: const Text('Are you sure you want to switch to a different collection? You will need to authenticate again.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Switch'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await CollectionManager.clearCurrentCollection();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const CollectionSelectionScreen()),
+          (route) => false,
+        );
+      }
+    }
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
@@ -170,19 +199,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     _buildSettingCard(
-                      title: 'Collection Name',
-                      subtitle: 'Set the Firestore collection name',
-                      leading: const Icon(Icons.folder_outlined),
-                      trailing: SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _collectionNameController,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
+                      title: 'Switch Collection',
+                      subtitle: 'Change to a different event collection',
+                      leading: const Icon(Icons.swap_horiz),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                      onTap: _switchCollection,
                     ),
                     _buildSettingCard(
                       title: 'Start Date',
@@ -226,6 +247,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         });
                       },
                     ),
+                    _buildSettingCard(
+                      title: 'Edit Access Code',
+                      subtitle: 'Modify collection access code (creator only)',
+                      leading: const Icon(Icons.lock_outline),
+                      trailing: const Icon(Icons.arrow_forward_ios),
+                      onTap: _editAccessCode,
+                    ),
                     const SizedBox(height: 20),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -260,6 +288,142 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  Future<void> _editAccessCode() async {
+    final currentCollection = CollectionManager.currentCollection;
+    if (currentCollection == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No active collection')),
+      );
+      return;
+    }
+
+    // Check if creator password is saved locally
+    String creatorPassword = await CollectionManager.getSavedCreatorPassword(currentCollection);
+    
+    // If not saved, ask for it
+    if (creatorPassword.isEmpty) {
+      final inputPassword = await _askForCreatorPassword();
+      if (inputPassword == null) return;
+      creatorPassword = inputPassword;
+    }
+
+    // Verify creator access
+    final isValid = await CollectionManager.verifyCreatorAccess(currentCollection, creatorPassword);
+    if (!isValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Invalid creator password'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    // Get current access code
+    final config = await CollectionManager.getCollectionConfig(currentCollection);
+    final currentAccessCode = config?['accessCode'] ?? '';
+
+    // Show edit dialog
+    final newAccessCode = await _showEditAccessCodeDialog(currentAccessCode);
+    if (newAccessCode == null) return;
+
+    // Update access code
+    final success = await CollectionManager.updateCollectionAccessCodes(
+      collectionName: currentCollection,
+      creatorPassword: creatorPassword,
+      newAccessCode: newAccessCode,
+    );
+
+    if (success) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Access code updated successfully')),
+        );
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update access code'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<String?> _askForCreatorPassword() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Creator Password Required'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Enter the creator password to modify access code:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Creator Password',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Verify'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showEditAccessCodeDialog(String currentAccessCode) async {
+    final controller = TextEditingController(text: currentAccessCode);
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Access Code'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Update the collection access code:'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Access Code',
+                hintText: 'Leave empty for open access',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Update'),
+          ),
+        ],
+      ),
     );
   }
 }
