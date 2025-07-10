@@ -17,9 +17,14 @@ Event Scan is a modern Flutter-based app designed to streamline barcode scanning
 
 ## Screenshots 📸
 
-<img src="https://github.com/user-attachments/assets/9e74de73-a0c2-41ce-b52e-c2b785fb40b4" width=200>
-<img src="https://github.com/user-attachments/assets/2a1c514f-057a-4604-87db-62bcda8df788" width=200>
-<img src="https://github.com/user-attachments/assets/2f61a23c-ac78-4f61-b5b8-940ead1f7fc8" width=200>
+<img src="https://github.com/user-attachments/assets/ac86614b-075d-4ed5-8de7-cae5b1abd191" width=200 />
+<img src="https://github.com/user-attachments/assets/8c02c64c-491e-418f-a567-ba34b091f438" width=200 />
+<img src="https://github.com/user-attachments/assets/e0fd3bc4-b7ea-4a46-92af-fcbd3d5493e7" width=200 />
+<img src="https://github.com/user-attachments/assets/e8cefeb4-b477-4222-9633-f6a75a3ca137" width=200 />
+<img src="https://github.com/user-attachments/assets/b6b45042-35f8-478c-836e-62134a38e9f9" width=200 />
+<img src="https://github.com/user-attachments/assets/a978f8dd-c783-4a37-b064-e58de94cf43a" width=200 />
+<img src="https://github.com/user-attachments/assets/4d388e11-cd13-4b90-8116-bcafe0061d34" width=200 />
+<img src="https://github.com/user-attachments/assets/3a012bfe-6033-48b1-a470-905bf5c4235e" width=200 />
 
 
 ## Installation 📲
