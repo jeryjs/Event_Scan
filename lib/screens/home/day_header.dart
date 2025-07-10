@@ -97,17 +97,19 @@ class DayHeader extends StatelessWidget {
     );
   }
 
-  Pair<String, int> _getDayText(startDate, endDate) {
+  Pair<String, int> _getDayText(dynamic startDate, dynamic endDate) {
     try {
       final start = DateTime.fromMillisecondsSinceEpoch(startDate.millisecondsSinceEpoch);
       final end = DateTime.fromMillisecondsSinceEpoch(endDate.millisecondsSinceEpoch);
-      final endDay = end.difference(start).inDays + 1;
-      if (start.isAfter(DateTime.now())) {
-        return Pair('Days to start: ', start.difference(DateTime.now()).inDays + 1);
-      } else if (end.isBefore(DateTime.now())) {
-        return Pair('Days since ended: ', endDay);
+      final now = DateTime.now();
+
+      if (start.isAfter(now)) {
+        return Pair('Days to start: ', start.difference(now).inDays + 1);
+      } else if (end.isBefore(now.subtract(Duration(days: 1)))) {
+        return Pair('Days since ended: ', now.difference(end).inDays);
       } else {
-        return Pair('Day: ', day);
+        final currentDay = now.difference(start).inDays + 1;
+        return Pair('Day: ', currentDay);
       }
     } catch (e) {
       return Pair('Day: ', day);
