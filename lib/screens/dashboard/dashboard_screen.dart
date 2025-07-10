@@ -156,7 +156,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                 values: _dayOptions,
                 selectedValue: _dayOptions[_selectedDay],
                 onValueSelected: (value) => _onDaySelected(_dayOptions.indexOf(value)),
-                thumbColor: Colors.white.withOpacity(0.2),
+                thumbColor: Colors.white.withValues(alpha: 0.2),
                 activeTextColor: Colors.white,
                 inactiveTextColor: Colors.white70,
                 containerHeight: 80.0,
@@ -164,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                 activeFontSize: 24.0,
                 inactiveFontSize: 16.0,
                 sliderDecoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(24),
                 ),
                 thumbCorrection: const EdgeInsets.only(left: -10, right: -20),
@@ -271,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [color.withOpacity(0.7), color],
+              colors: [color.withValues(alpha: 0.7), color],
             ),
             borderRadius: BorderRadius.circular(12),
           ),

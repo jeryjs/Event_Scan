@@ -95,7 +95,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                         borderSide: BorderSide.none,
                       ),
                       filled: true,
-                      fillColor: Colors.blue.withOpacity(0.1),
+                      fillColor: Colors.blue.withValues(alpha: 0.1),
                     ),
                   ),
                 ),
@@ -134,7 +134,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                 _animationController.reset();
                 _animationController.forward();
               },
-              backgroundColor: Colors.blue.withOpacity(0.1),
+              backgroundColor: Colors.blue.withValues(alpha: 0.1),
               selectedColor: category != 'All' 
                 ? Color(categoryModel!.colorValue)
                 : Theme.of(context).primaryColor,
@@ -217,7 +217,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
           child: ExpansionTile(
             leading: CircleAvatar(
               foregroundColor: Theme.of(context).colorScheme.primary,
-              backgroundColor: dayColors[widget.selectedDay].withOpacity(0.3),
+              backgroundColor: dayColors[widget.selectedDay].withValues(alpha: 0.3),
               child: Text(codeLast3, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
@@ -226,7 +226,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
               height: 70,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.blue.withValues(alpha: 0.1),
               ),
               child: Wrap(
                 alignment: WrapAlignment.center,
@@ -328,7 +328,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         
         return Container(
           decoration: BoxDecoration(
-            color: Color(category.colorValue).withOpacity(0.2),
+            color: Color(category.colorValue).withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Tooltip(

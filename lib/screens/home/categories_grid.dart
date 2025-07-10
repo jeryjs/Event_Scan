@@ -94,8 +94,8 @@ class _CategoryCardState extends State<_CategoryCard>
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                Color(widget.category.colorValue).withOpacity(0.1),
-                Color(widget.category.colorValue).withOpacity(0.2),
+                Color(widget.category.colorValue).withValues(alpha: 0.1),
+                Color(widget.category.colorValue).withValues(alpha: 0.2),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
@@ -103,7 +103,7 @@ class _CategoryCardState extends State<_CategoryCard>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 blurRadius: 10,
                 offset: const Offset(0, 5),
               ),
@@ -115,7 +115,7 @@ class _CategoryCardState extends State<_CategoryCard>
               Icon(
                 widget.category.icon.data,
                 size: 40,
-                color: Colors.white.withOpacity(0.9),
+                color: Colors.white.withValues(alpha: 0.9),
               ),
               const SizedBox(height: 8),
               Text(

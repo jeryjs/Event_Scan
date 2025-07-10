@@ -176,7 +176,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                       decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
                                         gradient: LinearGradient(
-                                          colors: [Colors.blue[100]!.withOpacity(0.1), Colors.blue[600]!.withOpacity(0.1)],
+                                          colors: [Colors.blue[100]!.withValues(alpha: 0.1), Colors.blue[600]!.withValues(alpha: 0.1)],
                                           begin: Alignment.topLeft,
                                           end: Alignment.bottomRight,
                                         ),

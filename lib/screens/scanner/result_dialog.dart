@@ -136,7 +136,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
       margin: const EdgeInsets.only(top: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.1),
+        color: Colors.black.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -158,7 +158,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
             return Chip(
               avatar: Icon(category.icon.data, color: dayColor),
               label: Text('${entry.$2.key} - Day ${entry.$2.value}'),
-              backgroundColor: dayColor.withOpacity(0.1),
+              backgroundColor: dayColor.withValues(alpha: 0.1),
             );
           }),
         ],

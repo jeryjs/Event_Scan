@@ -146,7 +146,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white.withOpacity(0.8),
+                                color: Colors.white.withValues(alpha: 0.8),
                               ),
                             ),
                             const Spacer(),
@@ -166,7 +166,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                             const SizedBox(height: 4),
                             Text(
                               'Note: Collection name is case-sensitive',
-                              style: TextStyle(color: Colors.white.withOpacity(0.6),fontSize: 12,fontStyle: FontStyle.italic,),
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6),fontSize: 12,fontStyle: FontStyle.italic,),
                             ),
                             const SizedBox(height: 16),
                             _buildTextField(
@@ -177,7 +177,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _showAccessCode ? Icons.visibility_off : Icons.visibility,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: Colors.white.withValues(alpha: 0.7),
                                 ),
                                 onPressed: () => setState(() => _showAccessCode = !_showAccessCode),
                               ),
@@ -199,7 +199,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                                   child: Text(
                                     'Remember access code for this collection',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.8),
+                                      color: Colors.white.withValues(alpha: 0.8),
                                       fontSize: 14,
                                     ),
                                   ),
@@ -225,7 +225,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                             Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Column(
@@ -235,14 +235,14 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                                     children: [
                                       Icon(
                                         Icons.info_outline,
-                                        color: Colors.white.withOpacity(0.8),
+                                        color: Colors.white.withValues(alpha: 0.8),
                                         size: 20,
                                       ),
                                       const SizedBox(width: 8),
                                       Text(
                                         'Need Help?',
                                         style: TextStyle(
-                                          color: Colors.white.withOpacity(0.9),
+                                          color: Colors.white.withValues(alpha: 0.9),
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -252,7 +252,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
                                   Text(
                                     'Ask your event organizer for the collection name and access code. Both are required to connect to an existing event collection.',
                                     style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
+                                      color: Colors.white.withValues(alpha: 0.7),
                                       height: 1.4,
                                     ),
                                   ),
@@ -283,7 +283,7 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
@@ -294,8 +294,8 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           suffixIcon: suffixIcon,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),

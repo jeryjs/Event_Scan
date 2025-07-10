@@ -130,15 +130,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   borderRadius: BorderRadius.circular(30),
                   gradient: LinearGradient(
                     colors: [ 
-                      Colors.blue[100]!.withOpacity(0.1),
-                      Colors.blue[600]!.withOpacity(0.1),
+                      Colors.blue[100]!.withValues(alpha: 0.1),
+                      Colors.blue[600]!.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.2),
+                      color: Colors.black.withValues(alpha: 0.2),
                       blurRadius: 10,
                       spreadRadius: 2,
                     ),

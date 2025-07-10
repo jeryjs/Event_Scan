@@ -46,14 +46,14 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
           padding: const EdgeInsets.all(16),
           alignment: Alignment.bottomCenter,
           decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Colors.teal.withOpacity(0.4), Colors.cyan.withOpacity(0.1)]),
+            gradient: LinearGradient(colors: [Colors.teal.withValues(alpha: 0.4), Colors.cyan.withValues(alpha: 0.1)]),
           ),
           child: TextField(
             onChanged: filterUsers,
             decoration: InputDecoration(
             hintText: 'Search attendees...',
             prefixIcon: const Icon(Icons.search),
-            fillColor: Colors.blue.withOpacity(0.1),
+            fillColor: Colors.blue.withValues(alpha: 0.1),
             filled: true,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),

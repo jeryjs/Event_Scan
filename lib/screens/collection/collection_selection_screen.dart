@@ -116,6 +116,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
             await Future.delayed(const Duration(milliseconds: 500));
           }
 
+          // ignore: use_build_context_synchronously
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomeScreen()),
           );
@@ -235,7 +236,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
             'Select or create an event collection',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -260,14 +261,14 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                   Icon(
                     Icons.folder_open,
                     size: 64,
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No collections found',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -275,7 +276,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                     'Create your first event collection',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -319,7 +320,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -336,7 +337,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Icon(
@@ -365,7 +366,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                               '${startDate.day}/${startDate.month}/${startDate.year}',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.7),
+                                color: Colors.white.withValues(alpha: 0.7),
                               ),
                             ),
                           ],
@@ -374,7 +375,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                     ),
                     Icon(
                       Icons.arrow_forward_ios,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       size: 16,
                     ),
                   ],
@@ -393,7 +394,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
                             (collection['creatorPassword'] != null
                                     ? Colors.blue
                                     : Colors.green)
-                                .withOpacity(0.3),
+                                .withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -472,17 +473,17 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
           title: Text(
             'How do collections work?',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               fontSize: 14,
               fontWeight: FontWeight.w500,
             ),
           ),
           trailing: Icon(
             _isExpansionOpen ? Icons.expand_more : Icons.expand_less,
-            color: Colors.white.withOpacity(0.8),
+            color: Colors.white.withValues(alpha: 0.8),
           ),
-          iconColor: Colors.white.withOpacity(0.8),
-          collapsedIconColor: Colors.white.withOpacity(0.8),
+          iconColor: Colors.white.withValues(alpha: 0.8),
+          collapsedIconColor: Colors.white.withValues(alpha: 0.8),
           childrenPadding: EdgeInsets.zero,
           tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           onExpansionChanged: (isExpanded) {
@@ -493,7 +494,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -536,7 +537,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.white.withOpacity(0.8), size: 18),
+        Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Column(
@@ -545,7 +546,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
               Text(
                 title,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
@@ -554,7 +555,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
               Text(
                 description,
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 12,
                   height: 1.3,
                 ),
@@ -601,7 +602,7 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
               CheckboxListTile(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  side: BorderSide(color: Colors.red.withOpacity(0.4)),
+                  side: BorderSide(color: Colors.red.withValues(alpha: 0.4)),
                 ),
                 value: deleteFromFirestore,
                 onChanged: (value) => setState(() {

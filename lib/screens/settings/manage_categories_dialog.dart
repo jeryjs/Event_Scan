@@ -80,7 +80,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
       await Database.addCategory(CategoryModel(
         name: categoryName,
         icon: _selectedIcon!,
-        colorValue: _selectedColor.value,
+        colorValue: _selectedColor.toARGB32(),
       ));
       _categoryController.clear();
       setState(() {
@@ -109,11 +109,11 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
           maxWidth: MediaQuery.of(context).size.width * 0.9,
         ),
         decoration: BoxDecoration(
-          color: Theme.of(context).dialogBackgroundColor,
+          color: DialogTheme.of(context).backgroundColor ?? Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Colors.black.withValues(alpha: 0.2),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -149,7 +149,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Row(
@@ -229,12 +229,12 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         foregroundColor: color,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: color.withOpacity(0.5)),
+          side: BorderSide(color: color.withValues(alpha: 0.5)),
         ),
       ),
       child: Column(
@@ -333,7 +333,7 @@ class _ManageCategoriesDialogState extends State<ManageCategoriesDialog> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Color(category.colorValue).withOpacity(0.1),
+            color: Color(category.colorValue).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(

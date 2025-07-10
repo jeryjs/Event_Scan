@@ -74,7 +74,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   Widget _buildCollectionNameField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
@@ -91,8 +91,8 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
         decoration: InputDecoration(
           labelText: 'Collection Name',
           hintText: 'e.g., xyz_conference_2025',
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           suffixIcon: _checkingName
               ? const Padding(
                   padding: EdgeInsets.all(16),
@@ -216,7 +216,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                   Text(
                     'Note: Collection names are case-sensitive',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
                     ),
@@ -274,7 +274,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
                             Text(
                               'Note: Once set, the creator password cannot be changed.',
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.6),
+                                color: Colors.white.withValues(alpha: 0.6),
                                 fontSize: 12,
                                 fontStyle: FontStyle.italic,
                               ),
@@ -336,7 +336,7 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: TextFormField(
@@ -347,8 +347,8 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.8)),
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
@@ -366,13 +366,13 @@ class _CreateCollectionScreenState extends State<CreateCollectionScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: ListTile(
         title: Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.8)),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         ),
         subtitle: Text(
           '${date.day}/${date.month}/${date.year}',

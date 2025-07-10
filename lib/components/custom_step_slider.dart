@@ -50,8 +50,8 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
     final defaultDecoration = BoxDecoration(
       gradient: LinearGradient(
         colors: [
-          Colors.blue[100]!.withOpacity(0.1),
-          Colors.blue[600]!.withOpacity(0.1),
+          Colors.blue[100]!.withValues(alpha: 0.1),
+          Colors.blue[600]!.withValues(alpha: 0.1),
         ],
       ),
       borderRadius: BorderRadius.circular(24),
@@ -85,7 +85,7 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
                               : FontWeight.normal,
                           color: isSelected
                               ? (widget.activeTextColor ?? Theme.of(context).colorScheme.secondary)
-                              : (widget.inactiveTextColor ?? Theme.of(context).colorScheme.secondary.withOpacity(0.8)),
+                              : (widget.inactiveTextColor ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8)),
                         ),
                         child: Text(
                           value,
@@ -106,7 +106,7 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
                       enabledThumbRadius: widget.thumbSize! / 2,
                     ),
                     overlayShape: SliderComponentShape.noThumb,
-                    thumbColor: widget.thumbColor ?? Colors.blue[100]!.withOpacity(0.4),
+                    thumbColor: widget.thumbColor ?? Colors.blue[100]!.withValues(alpha: 0.4),
                     activeTrackColor: Colors.transparent,
                     inactiveTrackColor: Colors.transparent,
                     trackHeight: 0,

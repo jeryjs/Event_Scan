@@ -20,7 +20,7 @@ class BarcodeRow extends StatelessWidget {
       child: Card(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         elevation: 8,
-        shadowColor: Colors.grey.withOpacity(0.5),
+        shadowColor: Colors.grey.withValues(alpha: 0.5),
         child: InkWell(
           onTap: () => _showDetailDialog(context),
           child: Container(
@@ -83,7 +83,7 @@ class BarcodeRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
+            color: Colors.blue.withValues(alpha: 0.3),
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -211,7 +211,7 @@ class BarcodeRow extends StatelessWidget {
         return Chip(
           avatar: Icon(category.icon.data, color: dayColor),
           label: Text('${entry.key} - Days ${entry.value.join(", ")}'),
-          backgroundColor: dayColor.withOpacity(0.1),
+          backgroundColor: dayColor.withValues(alpha: 0.1),
         );
       }).toList(),
     );

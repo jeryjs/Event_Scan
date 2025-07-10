@@ -64,7 +64,7 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
                 width: constraints.maxWidth * 0.8,
                 height: constraints.maxHeight * 0.1,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Center(

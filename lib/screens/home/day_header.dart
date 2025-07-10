@@ -27,13 +27,13 @@ class DayHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     width: 1.5,
                   ),
                   gradient: LinearGradient(
                     colors: [
-                      Colors.blue[100]!.withOpacity(0.1),
-                      Colors.blue[600]!.withOpacity(0.1),
+                      Colors.blue[100]!.withValues(alpha: 0.1),
+                      Colors.blue[600]!.withValues(alpha: 0.1),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -67,7 +67,7 @@ class DayHeader extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w300,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(width: 10),
