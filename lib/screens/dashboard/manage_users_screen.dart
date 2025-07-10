@@ -66,88 +66,79 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         if (filteredUsers.isEmpty)
         SliverFillRemaining(
           child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-            Icon(
-              Icons.people_outline,
-              size: 80,
-              color: Colors.grey[400],
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.people_outline,
+                  size: 80,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  searchQuery.isEmpty ? 'No attendees found' : 'No results found',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  searchQuery.isEmpty ? 'Add attendees to get started' : 'Try adjusting your search terms',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              searchQuery.isEmpty ? 'No attendees found' : 'No results found',
-              style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              searchQuery.isEmpty 
-              ? 'Add attendees to get started' 
-              : 'Try adjusting your search terms',
-              style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-              ),
-            ),
-            ],
-          ),
           ),
         )
         else
         SliverList(
-          delegate: SliverChildBuilderDelegate(
-          (context, index) {
+          delegate: SliverChildBuilderDelegate((context, index) {
             var user = filteredUsers[index];
             return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            elevation: 4,
-            child: ListTile(
-              leading: CircleAvatar(
-              child: Text(
-                (user['code']?.length ?? 0) > 3 ? user['code'].substring(user['code'].length - 3) : user['code'] ?? '',
-              ),
-              ),
-              title: Text(user['title'] ?? ''),
-              subtitle: Text('Code: ${user['code'] ?? ''}\n${user['subtitle'] ?? '-'}'),
-              trailing: IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                showDialog(
-                context: context,
-                builder: (context) => EditUserDialog(usersData: [user]),
-                );
-              },
-              ),
-              onLongPress: () => showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Delete User'),
-                content: Text('Are you sure you want to delete ${user['title']}?'),
-                actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                elevation: 4,
+                child: ListTile(
+                  leading: CircleAvatar(child: Text((user['code']?.length ?? 0) > 3 ? user['code'].substring(user['code'].length - 3) : user['code'] ?? '')),
+                  title: Text(user['title'] ?? ''),
+                  subtitle: Text('Code: ${user['code'] ?? ''}\n${user['subtitle'] ?? '-'}'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (context) => EditUserDialog(usersData: [user]),
+                    ),
+                  ),
+                  onLongPress: () => showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Delete User'),
+                      content: Text('Are you sure you want to delete ${user['title']}?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              Database.deleteUser(user['code'] ?? '');
+                              widget.users.removeAt(index);
+                              filterUsers(searchQuery);
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Delete'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                TextButton(
-                  onPressed: () {
-                  setState(() {
-                    Database.deleteUser(user['code']??'');
-                    widget.users.removeAt(index);
-                    filterUsers(searchQuery);
-                  });
-                  Navigator.pop(context);
-                  },
-                  child: const Text('Delete'),
-                ),
-                ],
-              ),
-              ),
-            ),
-            );
+              );
           },
           childCount: filteredUsers.length,
           ),

@@ -109,7 +109,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     }
     await Database.updateUsers(_usersData);
     if (mounted) { 
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(_usersData);
     }
   }
 
@@ -319,8 +319,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   }
 }
 
-void showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData) {
-  showDialog(
+Future<dynamic> showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData) async {
+  return showDialog(
     context: context,
     builder: (context) => EditUserDialog(usersData: usersData),
   );

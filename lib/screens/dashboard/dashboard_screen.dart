@@ -345,7 +345,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () => showDialog(context: context, builder: (context) => const EditUserDialog(usersData: [{}])),
+            onPressed: () async => showEditUserDialog(context, [{}]).then((newUsersData) {
+              if (newUsersData != _users) setState(_loadData);
+            }),
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.manage_accounts),
@@ -354,7 +356,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users))),
+            onPressed: () async {
+              Navigator.push(
+                context, MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users))
+              ).then((_) => setState(_updateCategoryCounts));
+            },
           ),
         ],
       ),
