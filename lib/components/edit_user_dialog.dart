@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:event_scan/services/database.dart';
+import 'package:flutter_iconpicker/Models/configuration.dart';
+import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
@@ -17,6 +19,7 @@ dynamic _customEncoder(dynamic item) {
   if (item is Timestamp) {
     return item.toDate().toIso8601String();
   }
+  if (item is IconPickerIcon) return serializeIcon(item);
   return item;
 }
 
@@ -332,9 +335,18 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
             children: [
               TextField(
                 focusNode: _valueFocusNodes[entry.key],
-                onChanged: (value) => _usersData[userIndex]['extras'][entry.key] = value,
-                decoration: InputDecoration(labelText: entry.key, border: InputBorder.none, focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey))),
-                controller: TextEditingController(text: entry.value),
+                onChanged: (value) => _updateFieldValue(entry.key, value, userIndex),
+                decoration: InputDecoration(
+                  labelText: entry.key,
+                  border: InputBorder.none,
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
+                  prefixIconConstraints: const BoxConstraints(minWidth: 36),
+                  prefixIcon: GestureDetector(
+                    onTap: () => _pickIconForField(entry.key, userIndex),
+                    child: Icon(_getIconForField(entry.key, userIndex)),
+                  )
+                ),
+                controller: TextEditingController(text: _getFieldValue(entry.key, userIndex)),
               ),
               if (_valueFocusNodes[entry.key]?.hasFocus == true)
               Positioned(
@@ -383,6 +395,55 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         ),
       ],
     );
+  }
+
+  Future<void> _pickIconForField(String key, int userIndex) async {
+    IconPickerIcon? icon = await showIconPicker(
+      context,
+      configuration: const SinglePickerConfiguration(
+        iconPackModes: [IconPack.material],
+      ),
+    );
+    if (icon != null) {
+      setState(() {
+        final currentValue = _getFieldValue(key, userIndex);
+        _usersData[userIndex]['extras'][key] = {
+          'value': currentValue,
+          'icon': icon.data.codePoint,
+        };
+      });
+    }
+  }
+
+  IconData _getIconForField(String key, int userIndex) {
+    final fieldData = _usersData[userIndex]['extras'][key];
+    if (fieldData is Map<String, dynamic> && fieldData['icon'] != null) {
+      return IconData(fieldData['icon'], fontFamily: 'MaterialIcons');
+    }
+    return Icons.category_outlined;
+  }
+
+  String _getFieldValue(String key, int userIndex) {
+    final fieldData = _usersData[userIndex]['extras'][key];
+    if (fieldData is Map<String, dynamic>) {
+      return fieldData['value']?.toString() ?? '';
+    }
+    return fieldData?.toString() ?? '';
+  }
+
+  void _updateFieldValue(String key, String value, int userIndex) {
+    final fieldData = _usersData[userIndex]['extras'][key];
+    if (fieldData is Map<String, dynamic>) {
+      _usersData[userIndex]['extras'][key] = {
+        'value': value,
+        'icon': fieldData['icon'],
+      };
+    } else {
+      _usersData[userIndex]['extras'][key] = {
+        'value': value,
+        'icon': null,
+      };
+    }
   }
 }
 
