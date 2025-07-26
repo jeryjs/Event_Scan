@@ -184,19 +184,19 @@ class BarcodeRow extends StatelessWidget {
   }
 
   Widget _buildDetailRow(ExtraField field) {
-    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
-    final phoneRegex = RegExp(r'^\+?[0-9\s\-\(\)]{7,}$');
-
+    final email = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
+    final phone = RegExp(r'^\+?[0-9\s\-\(\)]{7,}$');
+   
     Widget valueWidget = Text(field.value, style: const TextStyle(fontSize: 16));
-    if (emailRegex.hasMatch(field.value)) {
-      valueWidget = GestureDetector(
-        onTap: () async => await launchUrl(Uri(scheme: 'mailto', path: field.value)),
-        child: Text(field.value, style: TextStyle(fontSize: 16, color: Colors.blue[400], decoration: TextDecoration.underline)),
+    if (email.hasMatch(field.value)) {
+      valueWidget = InkWell(
+        onTap: () => launchUrl(Uri(scheme: 'mailto', path: field.value)),
+        child: Text(field.value, style: const TextStyle(fontSize: 16, decoration: TextDecoration.underline)),
       );
-    } else if (phoneRegex.hasMatch(field.value)) {
-      valueWidget = GestureDetector(
-        onTap: () async => await launchUrl(Uri(scheme: 'tel', path: field.value.replaceAll(RegExp(r'\D'), ''))),
-        child: Text(field.value, style: TextStyle(fontSize: 16, color: Colors.green[400], decoration: TextDecoration.underline)),
+    } else if (phone.hasMatch(field.value)) {
+      valueWidget = InkWell(
+        onTap: () => launchUrl(Uri(scheme: 'tel', path: field.value.replaceAll(RegExp(r'\D'), ''))),
+        child: Text(field.value, style: const TextStyle(fontSize: 16, decoration: TextDecoration.underline)),
       );
     }
 
