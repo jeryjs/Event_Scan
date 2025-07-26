@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../constants/day_colors.dart';
 import '../models/barcode_model.dart';
 import '../models/category_model.dart';
@@ -129,7 +130,7 @@ class BarcodeRow extends StatelessWidget {
                   children: [
                     _buildDetailHeader(),
                     const Divider(height: 32),
-                    ...barcode.extras.entries.map((entry) => _buildDetailRow(Icons.view_comfy_alt_outlined, entry.value)),
+                    ...barcode.extras.where((f) => f.value.isNotEmpty).map((field) => _buildDetailRow(field)),
                     const Divider(height: 32),
                     _buildScannedCategories(context),
                   ],
@@ -182,20 +183,46 @@ class BarcodeRow extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(IconData icon, String text) {
+  Widget _buildDetailRow(ExtraField field) {
+    final emailRegex = RegExp(r'^[\w\.-]+@[\w\.-]+\.\w+$');
+    final phoneRegex = RegExp(r'^\+?[0-9\s\-\(\)]{7,}$');
+
+    Widget valueWidget = Text(field.value, style: const TextStyle(fontSize: 16));
+
+    if (emailRegex.hasMatch(field.value)) {
+      valueWidget = GestureDetector(
+        onTap: () async {
+          final uri = Uri(scheme: 'mailto', path: field.value);
+          if (await canLaunchUrl(uri)) await launchUrl(uri);
+        },
+        child: Text(field.value,
+          style: const TextStyle(fontSize: 16, color: Colors.blue, decoration: TextDecoration.underline),
+        ),
+      );
+    } else if (phoneRegex.hasMatch(field.value)) {
+      valueWidget = GestureDetector(
+        onTap: () async {
+          final uri = Uri(scheme: 'tel', path: field.value.replaceAll(RegExp(r'\D'), ''));
+          if (await canLaunchUrl(uri)) await launchUrl(uri);
+        },
+        child: Text(field.value,
+          style: const TextStyle(fontSize: 16, color: Colors.green, decoration: TextDecoration.underline),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: Colors.blue[700]),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
+      child: Tooltip(
+        triggerMode: TooltipTriggerMode.tap,
+        message: field.key,
+        child: Row(
+          children: [
+            Icon(field.icon ?? Icons.view_comfy_alt_outlined, size: 20, color: Colors.blue[700]),
+            const SizedBox(width: 12),
+            Expanded(child: valueWidget),
+          ],
+        ),
       ),
     );
   }

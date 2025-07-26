@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:event_scan/services/database.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
+import 'package:event_scan/models/barcode_model.dart';
 import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {

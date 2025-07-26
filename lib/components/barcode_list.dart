@@ -30,12 +30,7 @@ class BarcodeListState extends State<BarcodeList> {
 
   bool _matchesSearch(BarcodeModel barcode) {
     if (searchTerm.isEmpty) return true;
-    final lowerCaseTerm = searchTerm.toLowerCase();
-    return barcode.code.toLowerCase().contains(lowerCaseTerm) ||
-           barcode.title.toLowerCase().contains(lowerCaseTerm) ||
-           barcode.subtitle.toLowerCase().contains(lowerCaseTerm) ||
-           barcode.extras.values.any((value) => value.toString().toLowerCase().contains(lowerCaseTerm)) ||
-           barcode.timestamp.toDate().toString().contains(lowerCaseTerm);
+    return barcode.query(searchTerm.toLowerCase());
   }
 
   @override
