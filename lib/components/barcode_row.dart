@@ -188,26 +188,15 @@ class BarcodeRow extends StatelessWidget {
     final phoneRegex = RegExp(r'^\+?[0-9\s\-\(\)]{7,}$');
 
     Widget valueWidget = Text(field.value, style: const TextStyle(fontSize: 16));
-
     if (emailRegex.hasMatch(field.value)) {
       valueWidget = GestureDetector(
-        onTap: () async {
-          final uri = Uri(scheme: 'mailto', path: field.value);
-          if (await canLaunchUrl(uri)) await launchUrl(uri);
-        },
-        child: Text(field.value,
-          style: const TextStyle(fontSize: 16, color: Colors.blue, decoration: TextDecoration.underline),
-        ),
+        onTap: () async => await launchUrl(Uri(scheme: 'mailto', path: field.value)),
+        child: Text(field.value, style: TextStyle(fontSize: 16, color: Colors.blue[400], decoration: TextDecoration.underline)),
       );
     } else if (phoneRegex.hasMatch(field.value)) {
       valueWidget = GestureDetector(
-        onTap: () async {
-          final uri = Uri(scheme: 'tel', path: field.value.replaceAll(RegExp(r'\D'), ''));
-          if (await canLaunchUrl(uri)) await launchUrl(uri);
-        },
-        child: Text(field.value,
-          style: const TextStyle(fontSize: 16, color: Colors.green, decoration: TextDecoration.underline),
-        ),
+        onTap: () async => await launchUrl(Uri(scheme: 'tel', path: field.value.replaceAll(RegExp(r'\D'), ''))),
+        child: Text(field.value, style: TextStyle(fontSize: 16, color: Colors.green[400], decoration: TextDecoration.underline)),
       );
     }
 
