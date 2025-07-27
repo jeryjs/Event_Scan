@@ -166,7 +166,6 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(24),
                 ),
-                thumbCorrection: const EdgeInsets.only(left: -10, right: -20),
               ),
         ),
       )

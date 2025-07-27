@@ -29,7 +29,7 @@ class CustomStepSlider extends StatefulWidget {
     this.inactiveFontSize = 32.0,
     this.animationDuration = const Duration(milliseconds: 300),
     this.sliderDecoration,
-    this.thumbCorrection = const EdgeInsets.only(left: -15.0, right: -15.0, top: 0.0, bottom: 0.0),
+    this.thumbCorrection = const EdgeInsets.only(left: -30.0, right: -30.0, top: 0.0, bottom: 0.0),
   });
 
   @override
@@ -66,11 +66,9 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Calculate required width for scrollable content
-        double contentWidth = constraints.maxWidth;
-        // Estimate width based on text length and number of items
-        final avgCharsPerItem = widget.values.map((v) => v.length).reduce((a, b) => a + b) / widget.values.length;
-        contentWidth = (avgCharsPerItem.clamp(60.0, 120.0) * widget.values.length).clamp(constraints.maxWidth / 1.2, double.infinity);
+        // Force equal width for each item to ensure perfect alignment
+        final itemWidth = widget.thumbSize!;
+        final contentWidth = (itemWidth * widget.values.length).clamp(constraints.maxWidth, double.infinity);
 
         return Container(
           height: widget.containerHeight ?? widget.thumbSize! * 2,
@@ -78,14 +76,14 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
           child: SingleChildScrollView(
             controller: _scrollController,
             scrollDirection: Axis.horizontal,
-            child: _buildContent(contentWidth),
+            child: _buildContent(contentWidth, itemWidth),
           )
         );
       },
     );
   }
 
-  Widget _buildContent(double contentWidth) {
+  Widget _buildContent(double contentWidth, double itemWidth) {
     return SizedBox(
       width: contentWidth,
       height: widget.containerHeight ?? widget.thumbSize! * 2,
@@ -94,34 +92,44 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Text labels
-            Positioned.fill(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                mainAxisSize: MainAxisSize.max,
-                children: widget.values.map((value) {
-                  bool isSelected = value == widget.selectedValue;
-                  return AnimatedDefaultTextStyle(
-                    duration: widget.animationDuration,
-                    style: TextStyle(
-                      fontSize: isSelected 
-                          ? widget.activeFontSize 
-                          : widget.inactiveFontSize,
-                      fontWeight: isSelected 
-                          ? FontWeight.bold 
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? (widget.activeTextColor ?? Theme.of(context).colorScheme.secondary)
-                          : (widget.inactiveTextColor ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8)),
+            // Text labels - positioned with equal spacing using y=mx+c
+            ...widget.values.asMap().entries.map((entry) {
+              final index = entry.key;
+              final value = entry.value;
+              final isSelected = value == widget.selectedValue;
+              
+              // Calculate position using linear formula for perfect alignment with slider (y = mx + c)
+              final availableWidth = contentWidth - 60.0; // Subtract padding
+              final position = index * availableWidth / (widget.values.length - 1);
+              
+              return Positioned(
+                left: position - (itemWidth / 2), // Center the text
+                top: 0, bottom: 0,
+                child: SizedBox(
+                  width: itemWidth,
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: widget.animationDuration,
+                      style: TextStyle(
+                        fontSize: isSelected 
+                            ? widget.activeFontSize 
+                            : widget.inactiveFontSize,
+                        fontWeight: isSelected 
+                            ? FontWeight.bold 
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? (widget.activeTextColor ?? Theme.of(context).colorScheme.secondary)
+                            : (widget.inactiveTextColor ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8)),
+                      ),
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.center,
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
+                  ),
+                ),
+              );
+            }),
             
             // Slider
             Positioned.fill(
@@ -144,9 +152,7 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
                   max: (widget.values.length - 1).toDouble(),
                   divisions: widget.values.length - 1,
                   onChanged: (value) {
-                    setState(() {
-                      _sliderValue = value;
-                    });
+                    setState(() => _sliderValue = value);
                     widget.onValueSelected(widget.values[value.round()]);
                     _scrollToSelectedValue(value.round());
                   },
