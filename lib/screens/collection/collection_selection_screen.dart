@@ -56,37 +56,48 @@ class _CollectionSelectionScreenState extends State<CollectionSelectionScreen>
     final collectionId = collection['id'] as String;
     final savedAccessCode = collection['accessCode'] as String?;
 
-    if (savedAccessCode != null && savedAccessCode.isNotEmpty) {
-      // Use saved access code directly
-      final verified = await CollectionManager.verifyCollectionAccess(
-        collectionId,
-        savedAccessCode,
-      );
-      if (verified) {
-        await CollectionManager.setCurrentCollection(collectionId);
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
+    try {
+      if (savedAccessCode != null && savedAccessCode.isNotEmpty) {
+        // Use saved access code directly
+        final verified = await CollectionManager.verifyCollectionAccess(
+          collectionId,
+          savedAccessCode,
+        );
+        if (verified) {
+          await CollectionManager.setCurrentCollection(collectionId);
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          }
+        } else {
+          // Saved access code is invalid, ask for new one
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Saved access code is invalid. Please enter the current access code.',
+                ),
+                backgroundColor: Colors.orange,
+              ),
+            );
+            _promptForAccessCode(collectionId);
+          }
         }
       } else {
-        // Saved access code is invalid, ask for new one
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Saved access code is invalid. Please enter the current access code.',
-              ),
-              backgroundColor: Colors.orange,
-            ),
-          );
-          _promptForAccessCode(collectionId);
-        }
+        // No saved access code, prompt for it
+        _promptForAccessCode(collectionId);
       }
-    } else {
-      // No saved access code, prompt for it
-      _promptForAccessCode(collectionId);
-    }
+    } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e is Exception ? e.toString() : 'Failed to connect to collection'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
   }
 
   Future<void> _promptForAccessCode(String collectionId) async {

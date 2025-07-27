@@ -79,8 +79,8 @@ class _ConnectCollectionScreenState extends State<ConnectCollectionScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Failed to connect to collection'),
+          SnackBar(
+            content: Text(e is Exception ? e.toString() : 'Failed to connect to collection'),
             backgroundColor: Colors.red,
           ),
         );

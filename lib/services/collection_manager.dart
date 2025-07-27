@@ -143,7 +143,9 @@ class CollectionManager {
   static Future<bool> verifyCollectionAccess(String collectionName, String accessCode, {bool saveAccessCode = true}) async {
     try {
       final configDoc = await _firestore.collection(collectionName).doc('.config').get();
-      if (!configDoc.exists) return false;
+      if (!configDoc.exists) {
+        throw Exception('Collection "$collectionName" does not exist.');
+      }
       
       final data = configDoc.data() as Map<String, dynamic>;
       
@@ -164,7 +166,7 @@ class CollectionManager {
       
       return isValid;
     } catch (e) {
-      return false;
+      rethrow;
     }
   }
   
