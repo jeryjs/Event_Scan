@@ -6,7 +6,7 @@ class ExtraField {
   final String value;
   final IconData? icon;
 
-  ExtraField({required this.key, required this.value, this.icon});
+  ExtraField({required this.key, this.value='', this.icon});
 
   factory ExtraField.fromEntry(String key, dynamic data) {
     if (data is Map<String, dynamic>) {
