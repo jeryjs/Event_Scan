@@ -1,9 +1,10 @@
+import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter/material.dart';
 import 'package:event_scan/services/database.dart';
 import '../../components/edit_user_dialog.dart';
 
 class ManageUsersScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> users;
+  final List<BarcodeModel> users;
 
   const ManageUsersScreen({super.key, required this.users});
 
@@ -12,7 +13,7 @@ class ManageUsersScreen extends StatefulWidget {
 }
 class _ManageUsersScreenState extends State<ManageUsersScreen> {
   String searchQuery = '';
-  List<Map<String, dynamic>> filteredUsers = [];
+  List<BarcodeModel> filteredUsers = [];
 
   @override
   void initState() {
@@ -24,10 +25,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     setState(() {
       searchQuery = query;
       filteredUsers = widget.users.where((user) {
-        return user['title'].toString().toLowerCase().contains(query.toLowerCase()) ||
-               user['subtitle'].toString().toLowerCase().contains(query.toLowerCase()) ||
-               user['extras'].values.any((value) => value.toString().toLowerCase().contains(query.toLowerCase())) ||
-               user['code'].toString().toLowerCase().contains(query.toLowerCase());
+        return user.query(query.toLowerCase());
       }).toList();
     });
   }
@@ -103,9 +101,9 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 elevation: 4,
                 child: ListTile(
-                  leading: CircleAvatar(child: Text((user['code']?.length ?? 0) > 3 ? user['code'].substring(user['code'].length - 3) : user['code'] ?? '')),
-                  title: Text(user['title'] ?? ''),
-                  subtitle: Text('Code: ${user['code'] ?? ''}\n${user['subtitle'] ?? '-'}'),
+                  leading: CircleAvatar(child: Text((user.code.length) > 3 ? user.code.substring(user.code.length - 3) : user.code)),
+                  title: Text(user.title),
+                  subtitle: Text('Code: ${user.code}\n${user.subtitle}'),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
@@ -114,7 +112,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Delete User'),
-                      content: Text('Are you sure you want to delete ${user['title']}?'),
+                      content: Text('Are you sure you want to delete ${user.title}?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
@@ -123,7 +121,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         TextButton(
                           onPressed: () {
                             setState(() {
-                              Database.deleteUser(user['code'] ?? '');
+                              Database.deleteUser(user.code);
                               widget.users.removeAt(index);
                               filterUsers(searchQuery);
                             });

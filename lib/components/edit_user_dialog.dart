@@ -7,7 +7,7 @@ import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
-  final List<Map<String, dynamic>> usersData;
+  final List<BarcodeModel> usersData;
   final bool canEditMultiple;
 
   const EditUserDialog({super.key, required this.usersData, required this.canEditMultiple});
@@ -17,17 +17,16 @@ class EditUserDialog extends StatefulWidget {
 }
 
 dynamic _customEncoder(dynamic item) {
-  if (item is Timestamp) {
-    return item.toDate().toIso8601String();
-  }
-  if (item is IconPickerIcon) return serializeIcon(item);
+  if (item is BarcodeModel) return item.toMap();
+  if (item is Timestamp) return item.toDate().toIso8601String();
+  if (item is IconPickerIcon) return serializeIcon(item); // Not used, but kept for reference
   if (item is ExtraField) return item.toJson();
   return item;
 }
 
 class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStateMixin {
   late TabController _tabController;
-  late List<Map<String, dynamic>> _usersData;
+  late List<BarcodeModel> _usersData;
   bool _isJsonMode = false;
   late TextEditingController _jsonController;
   String? _jsonError;
@@ -35,14 +34,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   @override
   void initState() {
     super.initState();
-    _usersData = widget.usersData.map((user) {
-      final newUser = Map<String, dynamic>.from(user);
-      // Ensure 'extras' is always a List<ExtraField>
-      if (newUser['extras'] is! List) {
-        newUser['extras'] = <ExtraField>[];
-      }
-      return newUser;
-    }).toList();
+    _usersData = widget.usersData;
     _tabController = TabController(length: _usersData.length, vsync: this);
     _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
   }
@@ -52,6 +44,19 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     _newKeyController.dispose();
     _newKeyFocus.dispose();
     super.dispose();
+  }
+
+  void _updateBarcodeData(int userIndex, dynamic data) {
+    _usersData[userIndex] = _usersData[userIndex].copyWith(
+      code: data['code'],
+      title: data['title'],
+      subtitle: data['subtitle'],
+      extras: ExtraField.fromDynamic(data['extras']),
+      scanned: (data['scanned'] as Map<String, dynamic>? ?? {}).map(
+        (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
+      ),
+      timestamp: data['timestamp'] ?? Timestamp.now(),
+    );
   }
 
   void _startAddingField() {
@@ -76,7 +81,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
       _cancelAddingField();
       return;
     }
-    final extras = ExtraField.fromDynamic(_usersData[userIndex]['extras']);
+    final extras = ExtraField.fromDynamic(_usersData[userIndex].extras);
     if (extras.any((field) => field.key == key)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Key "$key" already exists')),
@@ -85,7 +90,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     }
     setState(() {
       extras.add(ExtraField(key: key, value: ''));
-      _usersData[userIndex]['extras'] = extras;
+      _updateBarcodeData(userIndex, {'extras': extras});
       _isAddingField = false;
     });
   }
@@ -97,14 +102,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder);
       } else {
         try {
-          final decodedData = jsonDecode(_jsonController.text) as List<dynamic>;
-          _usersData = decodedData.map((user) {
-            final newUser = Map<String, dynamic>.from(user);
-            if (newUser['extras'] is! List) {
-              newUser['extras'] = <ExtraField>[];
-            }
-            return newUser;
-          }).toList();
+          _usersData = jsonDecode(_jsonController.text) as List<BarcodeModel>;
           _tabController = TabController(length: _usersData.length, vsync: this);
           _jsonError = null;
         } catch (error) {
@@ -120,17 +118,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
 
   void _addNewUser() {
     setState(() {
-      final newUser = {
-        'code': '',
-        'title': '',
-        'subtitle': '',
-        'extras': <ExtraField>[],
-      };
+      final newUser = BarcodeModel.empty();
       // Pre-populate with existing keys
       if (_usersData.isNotEmpty) {
-        final existingExtras = _usersData.first['extras'] as List<ExtraField>;
+        final existingExtras = _usersData.first.extras;
         for (var field in existingExtras) {
-          (newUser['extras'] as List<ExtraField>).add(ExtraField(key: field.key, value: ''));
+          newUser.extras.add(ExtraField(key: field.key, value: '', icon: field.icon));
         }
       }
       _usersData.add(newUser);
@@ -142,19 +135,14 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   Future<void> _saveChanges() async {
     if (_isJsonMode) {
       try {
-        final decodedData = jsonDecode(_jsonController.text) as List<dynamic>;
-        _usersData = decodedData.map((user) {
-          final newUser = Map<String, dynamic>.from(user);
-          newUser['extras'] ??= {};
-          return newUser;
-        }).toList();
+        _usersData = jsonDecode(_jsonController.text) as List<BarcodeModel>;
         _jsonError = null;
       } catch (error) {
         setState(() => _jsonError = 'Invalid JSON format');
         return;
       }
     }
-    await Database.updateUsers(_usersData);
+    await Database.updateUsers(_usersData.map((u) => u.toMap()).toList());
     if (mounted) { 
       Navigator.of(context).pop(_usersData);
     }
@@ -243,12 +231,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                           SizedBox(
                                             width: 200,
                                             child: TextField(
-                                              onChanged: (value) => _usersData[userIndex]['code'] = value,
+                                              onChanged: (value) => _updateBarcodeData(userIndex, {'code': value}),
                                               decoration: const InputDecoration(
                                                 labelText: 'Code',
                                                 border: InputBorder.none,
                                               ),
-                                              controller: TextEditingController(text: userData['code']),
+                                              controller: TextEditingController(text: userData.code),
                                             ),
                                           ),
                                         ],
@@ -256,23 +244,23 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                     ),
                                     const SizedBox(height: 40),
                                     TextField(
-                                      onChanged: (value) => _usersData[userIndex]['title'] = value,
+                                      onChanged: (value) => _updateBarcodeData(userIndex, {'title': value}),
                                       decoration: InputDecoration(
                                         labelText: 'Title',
                                         prefixIcon: const Icon(Icons.title),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['title']),
+                                      controller: TextEditingController(text: userData.title),
                                     ),
                                     const SizedBox(height: 20),
                                     TextField(
-                                      onChanged: (value) => _usersData[userIndex]['subtitle'] = value,
+                                      onChanged: (value) => _updateBarcodeData(userIndex, {'subtitle': value}),
                                       decoration: InputDecoration(
                                         labelText: 'Subtitle',
                                         prefixIcon: const Icon(Icons.subtitles),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
-                                      controller: TextEditingController(text: userData['subtitle']),
+                                      controller: TextEditingController(text: userData.subtitle),
                                     ),
                                     const SizedBox(height: 20),
                                     _buildExtrasFields(userData, userIndex),
@@ -316,8 +304,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     );
   }
 
-  Widget _buildExtrasFields(Map<String, dynamic> userData, int userIndex) {
-    final extras = ExtraField.fromDynamic(userData['extras']);
+  Widget _buildExtrasFields(BarcodeModel userData, int userIndex) {
+    final extras = ExtraField.fromDynamic(userData.extras);
     
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -354,7 +342,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                     icon: const Icon(Icons.clear, color: Colors.red),
                     onPressed: () => setState(() {
                       extras.removeAt(i);
-                      userData['extras'] = extras;
+                      _updateBarcodeData(userIndex, {'extras': extras});
                     }),
                     tooltip: 'Remove field',
                   ),
@@ -402,12 +390,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     if (icon != null) {
       setState(() {
         final userData = _usersData[userIndex];
-        final extras = ExtraField.fromDynamic(userData['extras']);
+        final extras = ExtraField.fromDynamic(userData.extras);
         
         if (fieldIndex < extras.length) {
           final field = extras[fieldIndex];
           extras[fieldIndex] = field.copyWith(icon: IconData(icon.data.codePoint, fontFamily: 'MaterialIcons'));
-          userData['extras'] = extras;
+          _updateBarcodeData(userIndex, {'extras': extras});
         }
       });
     }
@@ -415,21 +403,23 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
 
   void _updateFieldValue(int fieldIndex, String value, int userIndex) {
     final userData = _usersData[userIndex];
-    final extras = ExtraField.fromDynamic(userData['extras']);
+    final extras = ExtraField.fromDynamic(userData.extras);
     
     if (fieldIndex < extras.length) {
       final field = extras[fieldIndex];
       extras[fieldIndex] = field.copyWith(value: value);
-      userData['extras'] = extras;
+      _updateBarcodeData(userIndex, {'extras': extras});
     }
   }
 }
 
-Future showEditUserDialog(BuildContext context, List<Map<String, dynamic>> usersData, {
+Future<List<BarcodeModel>> showEditUserDialog(BuildContext context, List<BarcodeModel> usersData, {
   bool canEditMultiple = true,
 }) async {
-  return showDialog(
+  if (usersData.isEmpty) usersData = [BarcodeModel.empty()];
+  final result = await showDialog<List<BarcodeModel>>(
     context: context,
     builder: (context) => EditUserDialog(usersData: usersData, canEditMultiple: canEditMultiple),
   );
+  return result ?? usersData;
 }

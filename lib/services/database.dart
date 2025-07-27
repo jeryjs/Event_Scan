@@ -35,7 +35,7 @@ class Database {
     await CollectionManager.updateCollectionConfig(collection, settings);
   }
 
-  static Future<Map<String, dynamic>?> checkBarcode(String barcode, String category) async {
+  static Future<BarcodeModel?> checkBarcode(String barcode, String category) async {
     final collection = _getCurrentCollection();
     var settings = await getSettings();
     final startDate = (settings['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
@@ -58,14 +58,24 @@ class Database {
         });
       }
 
-      return {
-        'code': data['code'],
-        'title': data['title'],
-        'subtitle': data['subtitle'],
-        'extras': data['extras'],
-        'scanned': scanned,
-        'isScanned': isScanned,
-      };
+      return BarcodeModel(
+        code: data['code'] ?? '',
+        title: data['title'] ?? '',
+        subtitle: data['subtitle'] ?? '',
+        extras: ExtraField.fromDynamic(data['extras']),
+        scanned: scanned,
+        timestamp: data['timestamp'] ?? Timestamp.now(),
+        isScanned: isScanned,
+      );
+
+      // return {
+      //   'code': data['code'],
+      //   'title': data['title'],
+      //   'subtitle': data['subtitle'],
+      //   'extras': data['extras'],
+      //   'scanned': scanned,
+      //   'isScanned': isScanned,
+      // };
     }
     return null;
   }

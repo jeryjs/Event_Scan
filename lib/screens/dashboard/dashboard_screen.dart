@@ -1,3 +1,4 @@
+import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../components/custom_step_slider.dart';
@@ -18,7 +19,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> with TickerProviderStateMixin {
   late TabController _tabController;
-  List<Map<String, dynamic>> _users = [];
+  List<BarcodeModel> _users = [];
   // ignore: unused_field
   bool _isLoading = true;
   int _selectedDay = 0; // 0 represents 'All' days
@@ -62,6 +63,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
 
   Future<void> _loadData() async {
     await _loadUsers();
+    _updateCategoryCounts();
+    if (!_hasAnimated) {
+      _initialAnimationController.forward();
+      _hasAnimated = true;
+    }
     setState(() => _isLoading = false);
   }
 
@@ -72,15 +78,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       // Filter out system documents that start with '.'
       _users = snapshot.docs
           .where((doc) => !doc.id.startsWith('.'))
-          .map((doc) => doc.data() as Map<String, dynamic>)
+          .map((doc) => BarcodeModel.fromDocument(doc))
           .toList();
-      _isLoading = false;
     });
-    _updateCategoryCounts();
-    if (!_hasAnimated) {
-      _initialAnimationController.forward();
-      _hasAnimated = true;
-    }
   }
 
   void _updateCategoryCounts() {
@@ -90,10 +90,9 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       _categoryCounts[category.name] = 0;
     }
     for (var user in _users) {
-      var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-      for (var entry in scanned.entries) {
+      for (var entry in user.scanned.entries) {
         var category = entry.key;
-        var days = List<int>.from(entry.value ?? []);
+        var days = List<int>.from(entry.value);
         if (_selectedDay == 0 || days.contains(_selectedDay)) {
           _categoryCounts[category] = (_categoryCounts[category] ?? 0) + 1;
         }
@@ -310,8 +309,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       return _users.length;
     } else {
       return _users.where((user) {
-        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-        return scanned.values.any((days) => (days as List).contains(_selectedDay));
+        return user.scanned.values.any((days) => (days as List).contains(_selectedDay));
       }).length;
     }
   }
@@ -319,13 +317,11 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   int _calculateActiveUsers() {
     if (_selectedDay == 0) {
       return _users.where((user) {
-        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-        return scanned.isNotEmpty;
+        return user.scanned.isNotEmpty;
       }).length;
     } else {
       return _users.where((user) {
-        var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-        return scanned.values.any((days) => (days as List).contains(_selectedDay));
+        return user.scanned.values.any((days) => (days as List).contains(_selectedDay));
       }).length;
     }
   }
@@ -345,7 +341,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () async => showEditUserDialog(context, [{}]).then((newUsersData) {
+            onPressed: () async => showEditUserDialog(context, []).then((newUsersData) {
               if (newUsersData != _users) setState(_loadData);
             }),
           ),

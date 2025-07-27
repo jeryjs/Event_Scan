@@ -12,7 +12,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
 
 class ReportScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> users;
+  final List<BarcodeModel> users;
   final int selectedDay;
   final List<CategoryModel> categories;
 
@@ -192,11 +192,11 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
-    var codeStr = user['code'].toString();
+  Widget _buildUserCard(BarcodeModel user) {
+    var codeStr = user.code;
     var codeLast3 = codeStr.substring(codeStr.length - 3);
-    var scanned = user['scanned'] as Map<String, dynamic>? ?? {};
-    
+    var scanned = user.scanned;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Slidable(
@@ -236,10 +236,10 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
               ),
             ),
             title: Text(
-              user['title'] ?? '',
+              user.title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: Text(user['subtitle'] ?? ''),
+            subtitle: Text(user.subtitle),
             children: [
               _buildUserDetails(user, scanned),
             ],
@@ -269,15 +269,13 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     }).toList();
   }
 
-  Widget _buildUserDetails(Map<String, dynamic> user, Map<String, dynamic> scanned) {
-    final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
-
+  Widget _buildUserDetails(BarcodeModel user, Map<String, dynamic> scanned) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final field in extras) ...[
+          for (final field in user.extras) ...[
             _buildInfoRow(field.icon ?? Icons.info, '${field.key}: ${field.value}'),
           ],
           const Divider(),
@@ -380,9 +378,9 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     );
   }
 
-  List<Map<String, dynamic>> _filterUsers() {
+  List<BarcodeModel> _filterUsers() {
     return widget.users.where((user) {
-      final scanned = user['scanned'] as Map<String, dynamic>? ?? {};
+      final scanned = user.scanned;
       bool scannedOnDay = false;
       if (_selectedCategory == 'All') {
         for (var days in scanned.values) {
@@ -396,16 +394,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         scannedOnDay = days.isNotEmpty && (widget.selectedDay == 0 || days.contains(widget.selectedDay));
       }
 
-      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
-      bool extrasMatch = extras.any((field) =>
-        field.value.toLowerCase().contains(_searchQuery.toLowerCase())
-      );
-
-      return scannedOnDay && (
-        (user['title']?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)
-        || (user['code']?.toLowerCase().contains(_searchQuery) ?? false)
-        || extrasMatch
-      );
+      return scannedOnDay && user.query(_searchQuery.toLowerCase());
     }).toList();
   }
 
@@ -415,8 +404,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
     // Gather all extras keys
     final allExtrasKeys = widget.users.fold<Set<String>>({}, (keys, user) {
-      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
-      return keys..addAll(extras.map((field) => field.key));
+      return keys..addAll(user.extras.map((field) => field.key));
     }).toList();
 
     // Create "All Days" sheet with dynamic extras
@@ -440,20 +428,19 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     for (final user in widget.users) {
       // Build row with code, title, subtitle, dynamic extras
       final rowValues = <TextCellValue>[
-        TextCellValue(user['code']?.toString() ?? ''),
-        TextCellValue(user['title']?.toString() ?? ''),
-        TextCellValue(user['subtitle']?.toString() ?? ''),
+        TextCellValue(user.code),
+        TextCellValue(user.title),
+        TextCellValue(user.subtitle),
       ];
-      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
       for (var key in allExtrasKeys) {
-        final field = extras.firstWhere((f) => f.key == key, orElse: () => ExtraField(key: key, value: ''));
+        final field = user.extras.firstWhere((f) => f.key == key, orElse: () => ExtraField(key: key, value: ''));
         rowValues.add(TextCellValue(field.value));
       }
 
       // Attendance
       final categoriesScanned = widget.categories
-          .where((c) => ((user['scanned'] ?? {})[c.name] ?? []).isNotEmpty)
-          .map((c) => '${c.name} - Days ${((user['scanned'] ?? {})[c.name] ?? []).join(", ")}')
+          .where((c) => ((user.scanned)[c.name] ?? []).isNotEmpty)
+          .map((c) => '${c.name} - Days ${((user.scanned)[c.name] ?? []).join(", ")}')
           .join('\n');
 
       rowValues.add(TextCellValue(categoriesScanned));
@@ -489,11 +476,11 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
       }
       for (final user in widget.users) {
         daySheet.appendRow([
-          TextCellValue(user['code']?.toString() ?? ''),
-          TextCellValue(user['title']?.toString() ?? ''),
+          TextCellValue(user.code),
+          TextCellValue(user.title),
         ]);
         for (final category in widget.categories) {
-          final days = (user['scanned'] ?? {})[category.name] as List<dynamic>? ?? [];
+          final days = (user.scanned)[category.name] as List<dynamic>? ?? [];
           final cell = daySheet.cell(CellIndex.indexByColumnRow(
             columnIndex: dayHeaders.indexOf(category.name),
             rowIndex: daySheet.maxRows - 1,

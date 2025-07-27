@@ -1,3 +1,4 @@
+import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:event_scan/models/category_model.dart';
@@ -24,7 +25,7 @@ class _BarcodeScannerState extends State<BarcodeScanner> {
   void _onBarcodeScanned(String barcode) async {
     var result = await Database.checkBarcode(barcode, widget.category.name);
 
-    if (result == null || result.isEmpty || result['isScanned']) {
+    if (result == null || result.code.isEmpty || result.isScanned == true) {
       SoundManager.playFailureSound();
     } else {
       SoundManager.playSuccessSound();

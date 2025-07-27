@@ -8,7 +8,7 @@ import '../../constants/day_colors.dart';
 import '../../services/database.dart';
 
 class ResultDialog extends StatefulWidget {
-  final Map<String, dynamic>? result;
+  final BarcodeModel? result;
   final String barcode;
   final VoidCallback onDismissed;
   final List<CategoryModel>? categories;
@@ -37,9 +37,9 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
     _controller = AnimationController(vsync: this, duration: const Duration(seconds: 1));
     _colorAnimation = ColorTween(
       begin: Colors.transparent,
-      end: widget.result?['isScanned'] == null
+      end: widget.result?.isScanned == null
           ? Colors.amber[800]
-          : widget.result?['isScanned']
+          : widget.result?.isScanned == true
               ? Colors.red
               : Colors.green,
     ).animate(_controller);
@@ -65,18 +65,18 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.result?['title'] ?? 'Unknown';
-    final subtitle = widget.result?['subtitle'] ?? 'Unknown';
-    final extras = (widget.result?['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
-    final scanned = Map<String, dynamic>.from(widget.result?['scanned'] ?? {});
-    final isScanned = widget.result?['isScanned'];
+    final title = widget.result?.title ?? 'Unknown';
+    final subtitle = widget.result?.subtitle ?? 'Unknown';
+    final extras = widget.result?.extras ?? <ExtraField>[];
+    final scanned = widget.result?.scanned ?? {};
+    final isScanned = widget.result?.isScanned;
 
     // Show edit dialog if title is empty
-    if (title == 'Unknown') {
+    if (widget.result?.title.isEmpty == true) {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         showDialog(
           context: context,
-          builder: (context) => EditUserDialog(usersData: [widget.result ?? {}], canEditMultiple: false),
+          builder: (context) => EditUserDialog(usersData: [widget.result!], canEditMultiple: false),
         );
       });
     }

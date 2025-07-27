@@ -55,6 +55,7 @@ class BarcodeModel {
   final List<ExtraField> extras; // new list to store any other user fields
   final Map<String, List<int>> scanned;
   final Timestamp timestamp;
+  late bool? isScanned;
 
   BarcodeModel({
     required this.code,
@@ -63,6 +64,7 @@ class BarcodeModel {
     required this.extras,
     required this.scanned,
     required this.timestamp,
+    this.isScanned,
   });
 
   factory BarcodeModel.fromDocument(DocumentSnapshot doc) {
@@ -78,6 +80,45 @@ class BarcodeModel {
         (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
       ),
       timestamp: data?['timestamp'] ?? Timestamp.now(),
+    );
+  }
+
+  factory BarcodeModel.from(dynamic data) {
+    if (data is BarcodeModel) return data;
+    if (data is Map<String, dynamic>) {
+      return BarcodeModel(
+        code: data['code'] ?? '',
+        title: data['title'] ?? '',
+        subtitle: data['subtitle'] ?? '',
+        extras: ExtraField.fromDynamic(data['extras']),
+        scanned: (data['scanned'] as Map<String, dynamic>? ?? {}).map(
+          (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
+        ),
+        timestamp: data['timestamp'] ?? Timestamp.now(),
+      );
+    }
+    return BarcodeModel.empty();
+  }
+
+  factory BarcodeModel.empty() => BarcodeModel(code: '', title: '', subtitle: '', extras: [], scanned: {}, timestamp: Timestamp.now(), isScanned: null);
+
+  BarcodeModel copyWith({
+    String? code,
+    String? title,
+    String? subtitle,
+    List<ExtraField>? extras,
+    Map<String, List<int>>? scanned,
+    Timestamp? timestamp,
+    bool? isScanned,
+  }) {
+    return BarcodeModel(
+      code: code ?? this.code,
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      extras: extras ?? this.extras,
+      scanned: scanned ?? this.scanned,
+      timestamp: timestamp ?? this.timestamp,
+      isScanned: isScanned ?? this.isScanned,
     );
   }
 
