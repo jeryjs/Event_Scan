@@ -341,9 +341,17 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () async => showEditUserDialog(context, []).then((newUsersData) {
-              if (newUsersData != _users) setState(_loadData);
-            }),
+            onPressed: () async =>
+                showEditUserDialog(context, [
+                  // Create a new BarcodeModel with the existing extras fields
+                  BarcodeModel.from({
+                    'extras': _users.firstOrNull?.extras
+                        .map((f) => ExtraField(key: f.key, icon: f.icon))
+                        .toList(),
+                  }),
+                ]).then((newUsersData) {
+                  if (newUsersData != _users) setState(_loadData);
+                }),
           ),
           ElevatedButton.icon(
             icon: const Icon(Icons.manage_accounts),

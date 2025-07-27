@@ -1,8 +1,7 @@
-import 'package:event_scan/models/barcode_model.dart';
-import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:event_scan/models/category_model.dart';
 import 'package:event_scan/services/sound_manager.dart';
+import 'package:flutter/material.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../../services/database.dart';
 import 'result_dialog.dart';
