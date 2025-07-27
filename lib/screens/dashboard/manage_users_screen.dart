@@ -14,6 +14,8 @@ class ManageUsersScreen extends StatefulWidget {
 class _ManageUsersScreenState extends State<ManageUsersScreen> {
   String searchQuery = '';
   List<BarcodeModel> filteredUsers = [];
+  bool isSelectionMode = false;
+  Set<int> selectedIndices = {};
 
   @override
   void initState() {
@@ -30,6 +32,85 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     });
   }
 
+  void toggleSelection(int index) {
+    setState(() {
+      if (selectedIndices.contains(index)) {
+        selectedIndices.remove(index);
+        if (selectedIndices.isEmpty) {
+          isSelectionMode = false;
+        }
+      } else {
+        selectedIndices.add(index);
+      }
+    });
+  }
+
+  void enterSelectionMode(int index) {
+    setState(() {
+      isSelectionMode = true;
+      selectedIndices.add(index);
+    });
+  }
+
+  void exitSelectionMode() {
+    setState(() {
+      isSelectionMode = false;
+      selectedIndices.clear();
+    });
+  }
+
+  void deleteSelected() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Users'),
+        content: Text('Are you sure you want to delete ${selectedIndices.length} user(s)?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              // Get selected users and their codes
+              final selectedUsers = selectedIndices.map((index) => filteredUsers[index]).toList();
+              final userCodes = selectedUsers.map((user) => user.code).toList();
+
+              Navigator.pop(context); // Close dialog first
+              // Capture a local context for SnackBar usage
+              final sm = ScaffoldMessenger.of(context);
+              // Show loading indicator
+              if (mounted) sm.showSnackBar(const SnackBar(content: Text('Deleting users...')));
+
+              try {
+                // Delete from database
+                final success = await Database.deleteUsers(userCodes);
+
+                sm.hideCurrentSnackBar();
+
+                if (success && mounted) {
+                  // Remove from local list only if database deletion succeeded
+                  setState(() {
+                    widget.users.removeWhere((user) => userCodes.contains(user.code));
+                    filterUsers(searchQuery);
+                    exitSelectionMode();
+                  });
+
+                  sm.showSnackBar(SnackBar(content: Text('Deleted ${userCodes.length} user(s) successfully')));
+                } else {
+                  sm.showSnackBar(const SnackBar(content: Text('Failed to delete users')));
+                }
+              } catch (e) {
+                sm.showSnackBar(SnackBar(content: Text('Error deleting users: $e')));
+              }
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,7 +119,23 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         SliverAppBar(
         expandedHeight: 180,
         floating: true,
-        title: const Text('Manage Attendees'),
+        title: isSelectionMode 
+          ? Text('${selectedIndices.length} selected')
+          : const Text('Manage Attendees'),
+        leading: isSelectionMode 
+          ? IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: exitSelectionMode,
+            )
+          : null,
+        actions: isSelectionMode
+          ? [
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: selectedIndices.isNotEmpty ? deleteSelected : null,
+              ),
+            ]
+          : null,
         flexibleSpace: FlexibleSpaceBar(
           background: Container(
           padding: const EdgeInsets.all(16),
@@ -97,41 +194,33 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
             var user = filteredUsers[index];
+            bool isSelected = selectedIndices.contains(index);
+            
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 elevation: 4,
+                color: isSelected ? Colors.blue.withValues(alpha: 0.1) : null,
                 child: ListTile(
-                  leading: CircleAvatar(child: Text((user.code.length) > 3 ? user.code.substring(user.code.length - 3) : user.code)),
+                  leading: isSelectionMode
+                    ? Checkbox(
+                        value: isSelected,
+                        onChanged: (_) => toggleSelection(index),
+                      )
+                    : CircleAvatar(child: Text((user.code.length) > 3 ? user.code.substring(user.code.length - 3) : user.code)),
                   title: Text(user.title),
                   subtitle: Text('Code: ${user.code}\n${user.subtitle}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
-                  ),
-                  onLongPress: () => showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Delete User'),
-                      content: Text('Are you sure you want to delete ${user.title}?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              Database.deleteUser(user.code);
-                              widget.users.removeAt(index);
-                              filterUsers(searchQuery);
-                            });
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Delete'),
-                        ),
-                      ],
-                    ),
-                  ),
+                  trailing: !isSelectionMode
+                    ? IconButton(
+                        icon: const Icon(Icons.edit),
+                        onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
+                      )
+                    : null,
+                  onTap: isSelectionMode
+                    ? () => toggleSelection(index)
+                    : null,
+                  onLongPress: !isSelectionMode
+                    ? () => enterSelectionMode(index)
+                    : null,
                 ),
               );
           },

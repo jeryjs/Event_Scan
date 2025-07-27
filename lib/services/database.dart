@@ -244,4 +244,22 @@ class Database {
     final collection = _getCurrentCollection();
     return _firestore.collection(collection).doc(id).delete();
   }
+
+  static Future<bool> deleteUsers(List<String> ids) async {
+    final collection = _getCurrentCollection();
+    final batch = _firestore.batch();
+
+    for (var id in ids) {
+      var docRef = _firestore.collection(collection).doc(id);
+      batch.delete(docRef);
+    }
+
+    try {
+      await batch.commit();
+      return true;
+    } catch (e) {
+      debugPrint('Error deleting users: $e');
+      return false;
+    }
+  }
 }
