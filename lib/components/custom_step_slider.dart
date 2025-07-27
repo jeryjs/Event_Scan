@@ -121,10 +121,7 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
                             ? (widget.activeTextColor ?? Theme.of(context).colorScheme.secondary)
                             : (widget.inactiveTextColor ?? Theme.of(context).colorScheme.secondary.withValues(alpha: 0.8)),
                       ),
-                      child: Text(
-                        value,
-                        textAlign: TextAlign.center,
-                      ),
+                      child: Text(value, maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                   ),
                 ),
@@ -166,8 +163,6 @@ class _CustomStepSliderState extends State<CustomStepSlider> {
   }
 
   void _scrollToSelectedValue(int selectedIndex) {
-    if (widget.values.length <= 5) return; // No scrolling needed for few items
-    
     // Calculate the approximate position of the selected item
     final itemWidth = (_scrollController.position.maxScrollExtent + _scrollController.position.viewportDimension) / widget.values.length;
     final targetOffset = selectedIndex * itemWidth - _scrollController.position.viewportDimension / 2 + itemWidth / 2;
