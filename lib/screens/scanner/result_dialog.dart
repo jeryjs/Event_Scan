@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import '../../models/category_model.dart';
+import '../../models/barcode_model.dart';
 
 import '../../components/edit_user_dialog.dart';
 import '../../constants/day_colors.dart';
@@ -66,7 +67,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     final title = widget.result?['title'] ?? 'Unknown';
     final subtitle = widget.result?['subtitle'] ?? 'Unknown';
-    final extras = (widget.result?['extras'] as Map<String, dynamic>?) ?? {};
+    final extras = (widget.result?['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
     final scanned = Map<String, dynamic>.from(widget.result?['scanned'] ?? {});
     final isScanned = widget.result?['isScanned'];
 
@@ -117,7 +118,7 @@ class _ResultDialogState extends State<ResultDialog> with SingleTickerProviderSt
                   Text("Code: ${widget.barcode}"),
                   Text("Title: $title"),
                   Text("Subtitle: $subtitle"),
-                  ...extras.entries.map((entry) => Text('${entry.key}: ${entry.value}')),
+                  ...extras.map((field) => Text('${field.key}: ${field.value}')),
                   const SizedBox(height: 8),
                   _buildScannedDays(scanned),
                 ],

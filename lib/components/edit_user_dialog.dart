@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:event_scan/services/database.dart';
+import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'dart:convert';
@@ -20,6 +21,7 @@ dynamic _customEncoder(dynamic item) {
     return item.toDate().toIso8601String();
   }
   if (item is IconPickerIcon) return serializeIcon(item);
+  if (item is ExtraField) return item.toJson();
   return item;
 }
 
@@ -35,8 +37,10 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     super.initState();
     _usersData = widget.usersData.map((user) {
       final newUser = Map<String, dynamic>.from(user);
-      // Ensure 'extras' is always a Map
-      newUser['extras'] ??= {};
+      // Ensure 'extras' is always a List<ExtraField>
+      if (newUser['extras'] is! List) {
+        newUser['extras'] = <ExtraField>[];
+      }
       return newUser;
     }).toList();
     _tabController = TabController(length: _usersData.length, vsync: this);
@@ -72,14 +76,16 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
       _cancelAddingField();
       return;
     }
-    if (_usersData[userIndex]['extras'].containsKey(key)) {
+    final extras = ExtraField.fromDynamic(_usersData[userIndex]['extras']);
+    if (extras.any((field) => field.key == key)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Key "$key" already exists')),
       );
       return;
     }
     setState(() {
-      _usersData[userIndex]['extras'][key] = '';
+      extras.add(ExtraField(key: key, value: ''));
+      _usersData[userIndex]['extras'] = extras;
       _isAddingField = false;
     });
   }
@@ -94,7 +100,9 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
           final decodedData = jsonDecode(_jsonController.text) as List<dynamic>;
           _usersData = decodedData.map((user) {
             final newUser = Map<String, dynamic>.from(user);
-            newUser['extras'] ??= {};
+            if (newUser['extras'] is! List) {
+              newUser['extras'] = <ExtraField>[];
+            }
             return newUser;
           }).toList();
           _tabController = TabController(length: _usersData.length, vsync: this);
@@ -116,13 +124,13 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         'code': '',
         'title': '',
         'subtitle': '',
-        'extras': {},
+        'extras': <ExtraField>[],
       };
       // Pre-populate with existing keys
       if (_usersData.isNotEmpty) {
-        final existingKeys = _usersData.first['extras']?.keys ?? [];
-        for (var key in existingKeys) {
-          (newUser['extras'] as Map<dynamic, dynamic>)[key] = '';
+        final existingExtras = _usersData.first['extras'] as List<ExtraField>;
+        for (var field in existingExtras) {
+          (newUser['extras'] as List<ExtraField>).add(ExtraField(key: field.key, value: ''));
         }
       }
       _usersData.add(newUser);
@@ -142,9 +150,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         }).toList();
         _jsonError = null;
       } catch (error) {
-        setState(() {
-          _jsonError = 'Invalid JSON format';
-        });
+        setState(() => _jsonError = 'Invalid JSON format');
         return;
       }
     }
@@ -311,7 +317,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   }
 
   Widget _buildExtrasFields(Map<String, dynamic> userData, int userIndex) {
-    final extras = (userData['extras'] is Map<String, dynamic>) ? userData['extras'] as Map<String, dynamic> : {};
+    final extras = ExtraField.fromDynamic(userData['extras']);
+    
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -321,31 +328,34 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
           const Text('Custom Fields', style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
         // ],
-        for (final entry in extras.entries) ...[
+        for (int i = 0; i < extras.length; i++) ...[
           Stack(
             clipBehavior: Clip.none,
             children: [
               TextField(
-                onChanged: (value) => _updateFieldValue(entry.key, value, userIndex),
+                onChanged: (value) => _updateFieldValue(i, value, userIndex),
                 decoration: InputDecoration(
-                  labelText: entry.key,
+                  labelText: extras[i].key,
                   border: InputBorder.none,
                   focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
                   prefixIconConstraints: const BoxConstraints(minWidth: 36),
                   prefixIcon: GestureDetector(
-                    onTap: () => _pickIconForField(entry.key, userIndex),
-                    child: Icon(_getIconForField(entry.key, userIndex)),
+                    onTap: () => _pickIconForField(i, userIndex),
+                    child: Icon(extras[i].icon ?? Icons.category_outlined),
                   )
                 ),
-                controller: TextEditingController(text: _getFieldValue(entry.key, userIndex)),
+                controller: TextEditingController(text: extras[i].value),
               ),
-              if (_getFieldValue(entry.key, userIndex).isEmpty)
+              if (extras[i].value.isEmpty)
                 Positioned(
                   right: -20,
                   top: 8,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () => setState(() => _usersData[userIndex]['extras'].remove(entry.key)),
+                    onPressed: () => setState(() {
+                      extras.removeAt(i);
+                      userData['extras'] = extras;
+                    }),
                     tooltip: 'Remove field',
                   ),
                 ),
@@ -382,7 +392,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     );
   }
 
-  Future<void> _pickIconForField(String key, int userIndex) async {
+  Future<void> _pickIconForField(int fieldIndex, int userIndex) async {
     IconPickerIcon? icon = await showIconPicker(
       context,
       configuration: const SinglePickerConfiguration(
@@ -391,43 +401,26 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     );
     if (icon != null) {
       setState(() {
-        final currentValue = _getFieldValue(key, userIndex);
-        _usersData[userIndex]['extras'][key] = {
-          'value': currentValue,
-          'icon': icon.data.codePoint,
-        };
+        final userData = _usersData[userIndex];
+        final extras = ExtraField.fromDynamic(userData['extras']);
+        
+        if (fieldIndex < extras.length) {
+          final field = extras[fieldIndex];
+          extras[fieldIndex] = field.copyWith(icon: IconData(icon.data.codePoint, fontFamily: 'MaterialIcons'));
+          userData['extras'] = extras;
+        }
       });
     }
   }
 
-  IconData _getIconForField(String key, int userIndex) {
-    final fieldData = _usersData[userIndex]['extras'][key];
-    if (fieldData is Map<String, dynamic> && fieldData['icon'] != null) {
-      return IconData(fieldData['icon'], fontFamily: 'MaterialIcons');
-    }
-    return Icons.category_outlined;
-  }
-
-  String _getFieldValue(String key, int userIndex) {
-    final fieldData = _usersData[userIndex]['extras'][key];
-    if (fieldData is Map<String, dynamic>) {
-      return fieldData['value']?.toString() ?? '';
-    }
-    return fieldData?.toString() ?? '';
-  }
-
-  void _updateFieldValue(String key, String value, int userIndex) {
-    final fieldData = _usersData[userIndex]['extras'][key];
-    if (fieldData is Map<String, dynamic>) {
-      _usersData[userIndex]['extras'][key] = {
-        'value': value,
-        'icon': fieldData['icon'],
-      };
-    } else {
-      _usersData[userIndex]['extras'][key] = {
-        'value': value,
-        'icon': null,
-      };
+  void _updateFieldValue(int fieldIndex, String value, int userIndex) {
+    final userData = _usersData[userIndex];
+    final extras = ExtraField.fromDynamic(userData['extras']);
+    
+    if (fieldIndex < extras.length) {
+      final field = extras[fieldIndex];
+      extras[fieldIndex] = field.copyWith(value: value);
+      userData['extras'] = extras;
     }
   }
 }

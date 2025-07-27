@@ -24,8 +24,28 @@ class ExtraField {
       ? {'value': value, 'icon': icon!.codePoint}
       : {'value': value};
 
+  Map<String, dynamic> toJson() => {
+    'key': key,
+    'value': value,
+    if (icon != null) 'icon': icon!.codePoint,
+  };
+
   ExtraField copyWith({String? key, String? value, IconData? icon}) =>
       ExtraField(key: key ?? this.key, value: value ?? this.value, icon: icon ?? this.icon);
+
+  static List<ExtraField> fromDynamic(dynamic data) {
+    if (data is List<ExtraField>) return data;
+    if (data is List) {
+      return data.map((item) {
+        if (item is ExtraField) return item;
+        if (item is Map<String, dynamic>) {
+          return ExtraField.fromEntry(item['key'] ?? '', item);
+        }
+        return ExtraField(key: 'Unknown', value: item?.toString() ?? '');
+      }).toList();
+    }
+    return <ExtraField>[];
+  }
 }
 
 class BarcodeModel {
@@ -47,18 +67,15 @@ class BarcodeModel {
 
   factory BarcodeModel.fromDocument(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
-    final extrasData = data?['extras'] as Map<String, dynamic>? ?? {};
+    final extrasRaw = data?['extras'] as List? ?? [];
     
     return BarcodeModel(
       code: data?['code'] ?? '',
       title: data?['title'] ?? '',
       subtitle: data?['subtitle'] ?? '',
-      extras: extrasData.entries.map((e) => ExtraField.fromEntry(e.key, e.value)).toList(),
+      extras: extrasRaw.map((item) => ExtraField.fromEntry(item['key'], item)).toList(),
       scanned: (data?['scanned'] as Map<String, dynamic>? ?? {}).map(
-        (key, value) => MapEntry(
-          key,
-          (value as List).map((e) => e as int).toList(),
-        ),
+        (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
       ),
       timestamp: data?['timestamp'] ?? Timestamp.now(),
     );
@@ -69,7 +86,7 @@ class BarcodeModel {
       'code': code,
       'title': title,
       'subtitle': subtitle,
-      'extras': {for (var field in extras) field.key: field.toMap()},
+      'extras': extras.map((field) => {'key': field.key, ...field.toMap()}).toList(),
       'scanned': scanned,
       'timestamp': timestamp,
     };

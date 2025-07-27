@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/category_model.dart';
@@ -202,11 +203,16 @@ class Database {
 
     for (var userData in usersData) {
       final docRef = _firestore.collection(collection).doc(userData['code']);
+      
+      // Convert extras to proper format using ExtraField.fromDynamic
+      final extras = ExtraField.fromDynamic(userData['extras']);
+      final extrasData = extras.map((field) => {'key': field.key, ...field.toMap()}).toList();
+      
       batch.set(docRef, {
         'code': userData['code'],
         'title': userData['title'],
         'subtitle': userData['subtitle'],
-        'extras': userData['extras'] ?? {},
+        'extras': extrasData,
         'scanned': userData['scanned'] ?? {},
         'timestamp': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));

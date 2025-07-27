@@ -5,6 +5,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:event_scan/constants/day_colors.dart';
 import 'package:event_scan/services/database.dart';
+import 'package:event_scan/models/barcode_model.dart';
 import '../../components/edit_user_dialog.dart';
 import '../../models/category_model.dart';
 import 'package:file_picker/file_picker.dart';
@@ -269,18 +270,15 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
   }
 
   Widget _buildUserDetails(Map<String, dynamic> user, Map<String, dynamic> scanned) {
-    final rawExtras = user['extras'] ?? {};
-    final extras = (rawExtras is Map)
-      ? rawExtras.map<String, dynamic>((k, v) => MapEntry(k.toString(), v))
-      : <String, dynamic>{};
+    final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (final field in extras.entries) ...[
-            _buildInfoRow(Icons.info, '${field.key}: ${field.value}'),
+          for (final field in extras) ...[
+            _buildInfoRow(field.icon ?? Icons.info, '${field.key}: ${field.value}'),
           ],
           const Divider(),
           _buildCategoryGrid(scanned),
@@ -398,9 +396,9 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         scannedOnDay = days.isNotEmpty && (widget.selectedDay == 0 || days.contains(widget.selectedDay));
       }
 
-      final extras = user['extras'] as Map<String, dynamic>? ?? {};
-      bool extrasMatch = extras.values.any((value) =>
-        value?.toString().toLowerCase().contains(_searchQuery.toLowerCase()) ?? false
+      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
+      bool extrasMatch = extras.any((field) =>
+        field.value.toLowerCase().contains(_searchQuery.toLowerCase())
       );
 
       return scannedOnDay && (
@@ -417,8 +415,8 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
     // Gather all extras keys
     final allExtrasKeys = widget.users.fold<Set<String>>({}, (keys, user) {
-      final extras = user['extras'] as Map<String, dynamic>? ?? {};
-      return keys..addAll(extras.keys);
+      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
+      return keys..addAll(extras.map((field) => field.key));
     }).toList();
 
     // Create "All Days" sheet with dynamic extras
@@ -446,9 +444,10 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         TextCellValue(user['title']?.toString() ?? ''),
         TextCellValue(user['subtitle']?.toString() ?? ''),
       ];
-      final extras = user['extras'] as Map<String, dynamic>? ?? {};
+      final extras = (user['extras'] as List<dynamic>?)?.cast<ExtraField>() ?? <ExtraField>[];
       for (var key in allExtrasKeys) {
-        rowValues.add(TextCellValue(extras[key]?.toString() ?? ''));
+        final field = extras.firstWhere((f) => f.key == key, orElse: () => ExtraField(key: key, value: ''));
+        rowValues.add(TextCellValue(field.value));
       }
 
       // Attendance
