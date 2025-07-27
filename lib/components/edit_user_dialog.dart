@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:event_scan/services/database.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
-import 'package:event_scan/models/barcode_model.dart';
 import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
@@ -48,9 +47,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   void dispose() {
     _newKeyController.dispose();
     _newKeyFocus.dispose();
-    for (var node in _valueFocusNodes.values) {
-      node.dispose();
-    }
     super.dispose();
   }
 
@@ -85,10 +81,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     setState(() {
       _usersData[userIndex]['extras'][key] = '';
       _isAddingField = false;
-      _valueFocusNodes[key] = FocusNode();
-    });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _valueFocusNodes[key]?.requestFocus();
     });
   }
 
@@ -117,7 +109,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   bool _isAddingField = false;
   final TextEditingController _newKeyController = TextEditingController();
   final FocusNode _newKeyFocus = FocusNode();
-  final Map<String, FocusNode> _valueFocusNodes = {};
 
   void _addNewUser() {
     setState(() {
@@ -335,7 +326,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
             clipBehavior: Clip.none,
             children: [
               TextField(
-                focusNode: _valueFocusNodes[entry.key],
                 onChanged: (value) => _updateFieldValue(entry.key, value, userIndex),
                 decoration: InputDecoration(
                   labelText: entry.key,
@@ -349,22 +339,16 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                 ),
                 controller: TextEditingController(text: _getFieldValue(entry.key, userIndex)),
               ),
-              if (_valueFocusNodes[entry.key]?.hasFocus == true)
-              Positioned(
-                right: -20,
-                top: 8,
-                child: IconButton(
-                  icon: const Icon(Icons.clear, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      _usersData[userIndex]['extras'].remove(entry.key);
-                      _valueFocusNodes[entry.key]?.dispose();
-                      _valueFocusNodes.remove(entry.key);
-                    });
-                  },
-                  tooltip: 'Remove field',
+              if (_getFieldValue(entry.key, userIndex).isEmpty)
+                Positioned(
+                  right: -20,
+                  top: 8,
+                  child: IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.red),
+                    onPressed: () => setState(() => _usersData[userIndex]['extras'].remove(entry.key)),
+                    tooltip: 'Remove field',
+                  ),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 12),
