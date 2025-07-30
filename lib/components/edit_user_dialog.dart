@@ -27,6 +27,7 @@ dynamic _customEncoder(dynamic item) {
 class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStateMixin {
   late TabController _tabController;
   late List<BarcodeModel> _usersData;
+  late List<BarcodeModel> _originalUsersData;
   bool _isJsonMode = false;
   late TextEditingController _jsonController;
   String? _jsonError;
@@ -35,6 +36,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   void initState() {
     super.initState();
     _usersData = widget.usersData;
+    _originalUsersData = List.from(widget.usersData);
     _tabController = TabController(length: _usersData.length, vsync: this);
     _jsonController = TextEditingController(text: jsonEncode(_usersData, toEncodable: _customEncoder));
   }
@@ -264,6 +266,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                                           SizedBox(
                                             width: 200,
                                             child: TextField(
+                                              readOnly: userIndex < _originalUsersData.length && _originalUsersData[userIndex].code.isNotEmpty ,
                                               onChanged: (value) => _updateBarcodeData(userIndex, {'code': value}),
                                               decoration: const InputDecoration(
                                                 labelText: 'Code',
