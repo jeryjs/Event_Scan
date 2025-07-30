@@ -140,11 +140,13 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                 color: isSelected ? Colors.white : Color(categoryModel.colorValue),
               ) : const Icon(Icons.category),
               label: Text(category),
-              onSelected: (bool selected) {
-                setState(() => _selectedCategory = category);
-                _animationController.reset();
-                _animationController.forward();
-              },
+              onSelected: (_filters['_includeNonScanned'] != null)
+                ? null
+                : (bool selected) {
+                  setState(() => _selectedCategory = category);
+                  _animationController.reset();
+                  _animationController.forward();
+                },
               backgroundColor: Colors.blue.withValues(alpha: 0.1),
               selectedColor: category != 'All' 
                 ? Color(categoryModel!.colorValue)
@@ -429,7 +431,8 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
       
       // Check if including non-scanned users
       if (_filters['_includeNonScanned'] != null) {
-        scannedOnDay = true; // Include everyone if this option is enabled
+        _selectedCategory = 'All';  // force category to 'All'
+        scannedOnDay = true;  // Include everyone if this option is enabled
       } else {
         if (_selectedCategory == 'All') {
           for (var days in scanned.values) {
