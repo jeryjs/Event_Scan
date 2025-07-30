@@ -1,10 +1,13 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
-import 'package:event_scan/services/database.dart';
 import 'package:event_scan/models/barcode_model.dart';
+import 'package:event_scan/services/database.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 import 'package:flutter_iconpicker/flutter_iconpicker.dart';
-import 'dart:convert';
 
 class EditUserDialog extends StatefulWidget {
   final List<BarcodeModel> usersData;
@@ -112,6 +115,17 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     });
   }
 
+  Future<void> _loadJsonFile() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    if (result != null) {
+      final file = result.files.single;
+      final content = file.bytes != null 
+        ? String.fromCharCodes(file.bytes!) 
+        : await File(file.path!).readAsString();
+      setState(() => _jsonController.text = content);
+    }
+  }
+
   bool _isAddingField = false;
   final TextEditingController _newKeyController = TextEditingController();
   final FocusNode _newKeyFocus = FocusNode();
@@ -211,6 +225,9 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Edit Attendees', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Spacer(),
+                if (_isJsonMode)
+                  IconButton(icon: Icon(Icons.upload_file_outlined), tooltip: "Load from JSON File", onPressed: _loadJsonFile),
                 IconButton(
                   icon: Icon(_isJsonMode ? Icons.view_compact : Icons.code),
                   onPressed: _toggleMode,
@@ -358,7 +375,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                     onPressed: () => _jsonController.text = JsonEncoder.withIndent('  ').convert(jsonDecode(_jsonController.text)),
                     onLongPress: () => _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder),
                   ),
-                Spacer(),
+                const Spacer(),
                 TextButton.icon(
                   onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.cancel),
