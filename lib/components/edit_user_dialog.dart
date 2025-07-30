@@ -164,10 +164,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
           final decoded = jsonDecode(_jsonController.text) as List;
           _usersData = decoded.map((e) => BarcodeModel.from(e, strict: true)).toList();
           _jsonError = null;
-        } catch (error, stackTrace) {
-          setState(() => _jsonError = 'Invalid JSON format:\n$error');
-          debugPrintStack(stackTrace: stackTrace);
-          return;
+        } catch (error) {
+          return setState(() => _jsonError = 'Invalid JSON format:\n$error');
         }
       }
 
@@ -355,6 +353,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                if (_isJsonMode)
+                  IconButton.outlined(icon: Icon(Icons.auto_fix_high), tooltip: "Format JSON", visualDensity: VisualDensity.compact, 
+                    onPressed: () => _jsonController.text = JsonEncoder.withIndent('  ').convert(jsonDecode(_jsonController.text)),
+                    onLongPress: () => _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder),
+                  ),
+                Spacer(),
                 TextButton.icon(
                   onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.cancel),
