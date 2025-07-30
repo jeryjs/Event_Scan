@@ -120,6 +120,8 @@ class BarcodeModel {
     };
   }
 
+  Map<String, dynamic> toJson() => {...toMap(), 'timestamp': timestamp.toDate().toIso8601String()};
+
   bool query(String searchTerm) {
     return code.toLowerCase().contains(searchTerm) ||
            title.toLowerCase().contains(searchTerm) ||

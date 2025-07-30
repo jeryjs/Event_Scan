@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -34,6 +35,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
   late AnimationController _animationController;
   final ScrollController _scrollController = ScrollController();
   bool _isExporting = false;
+  bool _isFabExpanded = false;
   
   @override
   void initState() {
@@ -351,10 +353,44 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     return Positioned(
       bottom: 16,
       right: 16,
-      child: FloatingActionButton.extended(
-        onPressed: _exportToExcel,
-        icon: const Icon(Icons.file_download),
-        label: const Text('Export to Excel'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (_isFabExpanded) ...[
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('JSON', style: TextStyle(color: Colors.white70)),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  mini: true,
+                  onPressed: _exportToJson,
+                  child: const Icon(Icons.code),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Excel', style: TextStyle(color: Colors.white70)),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  mini: true,
+                  onPressed: _exportToExcel,
+                  child: const Icon(Icons.table_chart),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          FloatingActionButton.extended(
+            onPressed: () => setState(() => _isFabExpanded = !_isFabExpanded),
+            icon: Icon(_isFabExpanded ? Icons.close : Icons.file_download),
+            label: Text(_isFabExpanded ? 'Close' : 'Export'),
+          ),
+        ],
       ),
     );
   }
@@ -396,6 +432,20 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
       return scannedOnDay && user.query(_searchQuery.toLowerCase());
     }).toList();
+  }
+
+  Future<void> _exportToJson() async {
+    final jsonData = widget.users.map((user) => user.toJson()).toList();
+    final jsonString = JsonEncoder.withIndent('  ').convert(jsonData);
+    final bytes = Uint8List.fromList(jsonString.codeUnits);
+    
+    await FilePicker.platform.saveFile(
+      dialogTitle: 'Export to JSON',
+      fileName: "Event_Scan_Data-${DateTime.now()}.json",
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+      bytes: bytes,
+    );
   }
 
   Future<void> _exportToExcel() async {
