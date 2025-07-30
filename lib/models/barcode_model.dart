@@ -82,7 +82,13 @@ class BarcodeModel {
     );
   }
 
-  factory BarcodeModel.from(dynamic data) {
+  factory BarcodeModel.from(dynamic data, {bool strict = false}) {
+    if (strict) {
+      if (data is! Map<String, dynamic>) throw ArgumentError('Expected Map<String, dynamic>');
+      final required = ['code', 'title', 'subtitle', 'extras', 'scanned'];
+      final missing = required.where((key) => !data.containsKey(key)).toList();
+      if (missing.isNotEmpty) throw ArgumentError('Missing required fields: ${missing.join(', ')}');
+    }
     if (data is BarcodeModel) return data;
     if (data is Map<String, dynamic>) {
       return BarcodeModel(
@@ -93,7 +99,9 @@ class BarcodeModel {
         scanned: (data['scanned'] as Map<String, dynamic>? ?? {}).map(
           (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
         ),
-        timestamp: data['timestamp'] ?? Timestamp.now(),
+        timestamp: data['timestamp'] is int
+          ? Timestamp.fromMillisecondsSinceEpoch(data['timestamp'])
+          : data['timestamp'] ?? Timestamp.now(),
       );
     }
     return BarcodeModel.empty();

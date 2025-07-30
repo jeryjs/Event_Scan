@@ -18,7 +18,7 @@ class EditUserDialog extends StatefulWidget {
 
 dynamic _customEncoder(dynamic item) {
   if (item is BarcodeModel) return item.toMap();
-  if (item is Timestamp) return item.toDate().toIso8601String();
+  if (item is Timestamp) return item.millisecondsSinceEpoch;
   if (item is IconPickerIcon) return serializeIcon(item); // Not used, but kept for reference
   if (item is ExtraField) return item.toJson();
   return item;
@@ -97,17 +97,22 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
 
   void _toggleMode() {
     setState(() {
-      _isJsonMode = !_isJsonMode;
       if (_isJsonMode) {
-        _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder);
-      } else {
+        // Switching from JSON to UI mode - validate first
         try {
-          _usersData = jsonDecode(_jsonController.text) as List<BarcodeModel>;
+          final decoded = jsonDecode(_jsonController.text) as List;
+          _usersData = decoded.map((e) => BarcodeModel.from(e, strict: true)).toList();
           _tabController = TabController(length: _usersData.length, vsync: this);
           _jsonError = null;
+          _isJsonMode = false;
         } catch (error) {
-          _jsonError = 'Invalid JSON format';
+          _jsonError = 'Invalid JSON format:\n$error';
+          // Don't toggle mode, stay in JSON mode
         }
+      } else {
+        // Switching from UI to JSON mode
+        _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder);
+        _isJsonMode = true;
       }
     });
   }
@@ -135,10 +140,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   Future<void> _saveChanges() async {
     if (_isJsonMode) {
       try {
-        _usersData = jsonDecode(_jsonController.text) as List<BarcodeModel>;
+        final decoded = jsonDecode(_jsonController.text) as List;
+        _usersData = decoded.map((e) => BarcodeModel.from(e, strict: true)).toList();
         _jsonError = null;
-      } catch (error) {
-        setState(() => _jsonError = 'Invalid JSON format');
+      } catch (error, stackTrace) {
+        setState(() => _jsonError = 'Invalid JSON format:\n$error');
+        debugPrintStack(stackTrace: stackTrace);
         return;
       }
     }
