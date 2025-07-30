@@ -69,13 +69,12 @@ class BarcodeModel {
 
   factory BarcodeModel.fromDocument(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>?;
-    final extrasRaw = data?['extras'] as List? ?? [];
     
     return BarcodeModel(
       code: data?['code'] ?? '',
       title: data?['title'] ?? '',
       subtitle: data?['subtitle'] ?? '',
-      extras: extrasRaw.map((item) => ExtraField.fromEntry(item['key'], item)).toList(),
+      extras: ExtraField.fromDynamic(data?['extras']),
       scanned: (data?['scanned'] as Map<String, dynamic>? ?? {}).map(
         (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
       ),

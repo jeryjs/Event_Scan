@@ -85,11 +85,13 @@ class Database {
     if (isScanned) {
       return _firestore
           .collection(collection)
+          .where(FieldPath.documentId, isNotEqualTo: '.config')
           .where('scanned.$category', arrayContains: selectedDay)
           .snapshots();
     } else {
       return _firestore
           .collection(collection)
+          .where(FieldPath.documentId, isNotEqualTo: '.config')
           .snapshots();
     }
   }
@@ -237,7 +239,7 @@ class Database {
 
   static Future<QuerySnapshot> getUsers() async {
     final collection = _getCurrentCollection();
-    return _firestore.collection(collection).get();
+    return _firestore.collection(collection).where(FieldPath.documentId, isNotEqualTo: '.config').get();
   }
 
   static Future<void> deleteUser(String id) async {
