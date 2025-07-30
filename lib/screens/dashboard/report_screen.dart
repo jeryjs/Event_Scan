@@ -10,7 +10,7 @@ import 'package:event_scan/models/barcode_model.dart';
 import '../../components/edit_user_dialog.dart';
 import '../../models/category_model.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:excel/excel.dart' as excel;
+import 'package:excel/excel.dart';
 
 class ReportScreen extends StatefulWidget {
   final List<BarcodeModel> users;
@@ -472,35 +472,71 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     final fields = ['code', 'title', 'subtitle', ...widget.users.expand((u) => u.extras.map((e) => e.key)).toSet()];
     showDialog(context: context, builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
-        title: const Text('Filters'),
-        content: SizedBox(width: 300, height: 400, child: Column(
+        title: Row(children: [const Icon(Icons.filter_list, size: 20), const SizedBox(width: 8), const Text('Filters')]),
+        content: SizedBox(width: 320, height: 420, child: Column(
           children: [
-            CheckboxListTile(
-              title: const Text('Include non-scanned users'),
-              value: _filters['_includeNonScanned'] != null,
-              onChanged: (val) => setDialogState(() => val! ? _filters['_includeNonScanned'] = {'operator': 'include', 'value': true} : _filters.remove('_includeNonScanned')),
+            Container(
+              decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+              child: CheckboxListTile(
+                dense: true,
+                title: const Text('Include non-scanned users', style: TextStyle(fontSize: 14)),
+                value: _filters['_includeNonScanned'] != null,
+                onChanged: (val) => setDialogState(() => val! ? _filters['_includeNonScanned'] = {'operator': 'include', 'value': true} : _filters.remove('_includeNonScanned')),
+              ),
             ),
-            const Divider(),
+            const SizedBox(height: 12),
             Expanded(child: ListView(
-              children: fields.map((field) => ExpansionTile(
-                title: Text(field),
-                children: [
-                  for (var op in ['contains', 'equals', 'in']) ListTile(
-                    title: Text(op),
-                    onTap: () => _addFilter(field, op),
-                  )
-                ],
-              )).toList(),
+              children: fields.map((field) {
+                final isActive = _filters.containsKey(field);
+                final activeFilter = _filters[field];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  color: isActive ? Colors.green.withValues(alpha: 0.1) : null,
+                  child: ExpansionTile(
+                    dense: true,
+                    leading: Icon(_getFieldIcon(field), size: 18),
+                    title: Text(field, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                    subtitle: isActive ? Text('${activeFilter['operator']}: ${activeFilter['value']}', style: const TextStyle(fontSize: 12, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    trailing: isActive ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setDialogState(() => _filters.remove(field))) : null,
+                    children: isActive ? [] : [
+                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Row(
+                        children: ['contains', 'equals', 'in'].map((op) => Expanded(child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 2),
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                            onPressed: () => _addFilter(field, op),
+                            child: Text(op, style: const TextStyle(fontSize: 12)),
+                          ),
+                        ))).toList(),
+                      ))
+                    ],
+                  ),
+                );
+              }).toList(),
             )),
-            if (_filters.isNotEmpty) _buildActiveFilters(),
           ],
         )),
         actions: [
-          TextButton(onPressed: () => setState(() { _filters.clear(); Navigator.pop(context); }), child: const Text('Clear')),
-          TextButton(onPressed: () { setState(() {}); Navigator.pop(context); }, child: const Text('Apply')),
+          TextButton.icon(onPressed: () => setState(() { _filters.clear(); Navigator.pop(context); }), icon: const Icon(Icons.clear_all, size: 16), label: const Text('Clear')),
+          FilledButton.icon(onPressed: () { setState(() {}); Navigator.pop(context); }, icon: const Icon(Icons.check, size: 16), label: const Text('Apply')),
         ],
       ),
     ));
+  }
+
+  IconData _getFieldIcon(String field) {
+    switch (field) {
+      case 'code': return Icons.qr_code;
+      case 'title': return Icons.person;
+      case 'subtitle': return Icons.info_outline;
+      default:
+        // Try to find the icon from the actual ExtraField
+        for (final user in widget.users) {
+          final extraField = user.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: ''));
+          if (extraField.key == field && extraField.icon != null) return extraField.icon!;
+        }
+        return Icons.label_outline;
+    }
   }
 
   void _addFilter(String field, String operator) {
@@ -508,334 +544,25 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     final values = widget.users.map((u) => field == 'code' ? u.code : field == 'title' ? u.title : field == 'subtitle' ? u.subtitle : u.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value).where((v) => v.isNotEmpty).toSet().toList();
     
     if (operator == 'in' && values.length <= 50) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          List<String> selected = [];
-          return StatefulBuilder(
-            builder: (context, setDialogState) => Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.9,
-                height: MediaQuery.of(context).size.height * 0.7,
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            _getFieldIcon(field),
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Select ${field.toUpperCase()} Values',
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                '${values.length} options available',
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: selected.isEmpty ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: selected.isEmpty ? Colors.orange.withOpacity(0.3) : Colors.green.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            selected.isEmpty ? Icons.warning_amber : Icons.check_circle,
-                            color: selected.isEmpty ? Colors.orange : Colors.green,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            selected.isEmpty 
-                                ? 'Select at least one value to filter'
-                                : '${selected.length} value${selected.length == 1 ? '' : 's'} selected',
-                            style: TextStyle(
-                              color: selected.isEmpty ? Colors.orange[700] : Colors.green[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListView.builder(
-                          itemCount: values.length,
-                          itemBuilder: (context, index) {
-                            final value = values[index];
-                            final isSelected = selected.contains(value);
-                            return Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: isSelected ? Theme.of(context).primaryColor.withOpacity(0.1) : null,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: CheckboxListTile(
-                                title: Text(
-                                  value,
-                                  style: TextStyle(
-                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                    color: isSelected ? Theme.of(context).primaryColor : null,
-                                  ),
-                                ),
-                                value: isSelected,
-                                onChanged: (bool? val) => setDialogState(() => val! ? selected.add(value) : selected.remove(value)),
-                                activeColor: Theme.of(context).primaryColor,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.close),
-                            label: const Text('Cancel'),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: selected.isEmpty ? null : () {
-                              setState(() => _filters[field] = {'operator': operator, 'value': selected});
-                              Navigator.pop(context);
-                            },
-                            icon: const Icon(Icons.filter_alt),
-                            label: const Text('Apply Filter'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      );
+      showDialog(context: context, builder: (context) {
+        List<String> selected = [];
+        return StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
+          title: Text('Select $field values'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: values.map((v) => CheckboxListTile(
+            title: Text(v), value: selected.contains(v), onChanged: (bool? val) => setDialogState(() => val! ? selected.add(v) : selected.remove(v))
+          )).toList()),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': selected}); Navigator.pop(context); }, child: const Text('Apply'))],
+        ));
+      });
     } else {
-      showDialog(
-        context: context,
-        builder: (context) {
-          String value = '';
-          final controller = TextEditingController();
-          return Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            child: Container(
-              width: MediaQuery.of(context).size.width * 0.85,
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).primaryColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          _getOperatorIcon(operator),
-                          color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Filter ${field.toUpperCase()}',
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'Using "${operator}" operator',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getOperatorDescription(operator),
-                            style: TextStyle(color: Colors.blue[700], fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    controller: controller,
-                    onChanged: (v) => value = v,
-                    decoration: InputDecoration(
-                      labelText: 'Enter filter value',
-                      hintText: _getOperatorHint(operator, field),
-                      prefixIcon: Icon(_getFieldIcon(field)),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey.withOpacity(0.05),
-                    ),
-                    autofocus: true,
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                          label: const Text('Cancel'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            if (controller.text.trim().isNotEmpty) {
-                              setState(() => _filters[field] = {'operator': operator, 'value': controller.text.trim()});
-                              Navigator.pop(context);
-                            }
-                          },
-                          icon: const Icon(Icons.filter_alt),
-                          label: const Text('Apply Filter'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-    );
-  }
-}  Widget _buildActiveFilters() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Wrap(
-        spacing: 4,
-        children: _filters.entries.map((entry) {
-          final displayText = entry.key == '_includeNonScanned' 
-              ? 'Include non-scanned'
-              : '${entry.key}: ${entry.value['operator']}';
-          
-          return Chip(
-            label: Text(displayText, style: const TextStyle(fontSize: 12)),
-            deleteIcon: const Icon(Icons.close, size: 16),
-            onDeleted: () => setState(() => _filters.remove(entry.key)),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  IconData _getFieldIcon(String field) {
-    switch (field.toLowerCase()) {
-      case 'code': return Icons.badge;
-      case 'title': return Icons.person;
-      case 'subtitle': return Icons.description;
-      case 'email': return Icons.email;
-      case 'phone': return Icons.phone;
-      case 'department': return Icons.business;
-      case 'role': return Icons.work;
-      case 'location': return Icons.location_on;
-      default: return Icons.label;
-    }
-  }
-
-  IconData _getOperatorIcon(String operator) {
-    switch (operator) {
-      case 'contains': return Icons.search;
-      case 'equals': return Icons.drag_handle;
-      case 'in': return Icons.checklist;
-      default: return Icons.filter_alt;
-    }
-  }
-
-  String _getOperatorDescription(String operator) {
-    switch (operator) {
-      case 'contains': return 'Find records where this field contains the specified text (case-insensitive)';
-      case 'equals': return 'Find records where this field exactly matches the specified value';
-      case 'in': return 'Find records where this field matches any of the selected values';
-      default: return 'Apply filter to this field';
-    }
-  }
-
-  String _getOperatorHint(String operator, String field) {
-    switch (operator) {
-      case 'contains': return 'Part of ${field} to search for...';
-      case 'equals': return 'Exact ${field} value...';
-      default: return 'Enter ${field} value...';
+      showDialog(context: context, builder: (context) {
+        String value = '';
+        return AlertDialog(
+          title: Text('Filter $field'),
+          content: TextField(onChanged: (v) => value = v, decoration: InputDecoration(hintText: 'Enter value')),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': value}); Navigator.pop(context); }, child: const Text('Apply'))],
+        );
+      });
     }
   }
 
@@ -855,7 +582,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
 
   Future<void> _exportToExcel() async {
     setState(() => _isExporting = true);
-    var excelFile = excel.Excel.createExcel();
+    var excel = Excel.createExcel();
 
     // Gather all extras keys
     final allExtrasKeys = widget.users.fold<Set<String>>({}, (keys, user) {
@@ -863,33 +590,33 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     }).toList();
 
     // Create "All Days" sheet with dynamic extras
-    excelFile.rename("Sheet1", "All Days");
-    final allDaysSheet = excelFile['All Days'];
+    excel.rename("Sheet1", "All Days");
+    final allDaysSheet = excel['All Days'];
 
     // Headers: code, title, subtitle, dynamic extras, attendance
     final headers = ['Code', 'Title', 'Subtitle', ...allExtrasKeys, 'Attendance'];
     for (var header in headers) {
-      final headerCell = allDaysSheet.cell(excel.CellIndex.indexByColumnRow(
+      final headerCell = allDaysSheet.cell(CellIndex.indexByColumnRow(
         columnIndex: headers.indexOf(header),
         rowIndex: 0,
       ));
       headerCell
-        ..value = excel.TextCellValue(header)
-        ..cellStyle = excel.CellStyle(bold: true, horizontalAlign: excel.HorizontalAlign.Center);
+        ..value = TextCellValue(header)
+        ..cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
       allDaysSheet.setColumnAutoFit(headerCell.columnIndex);
     }
 
     // Fill rows
     for (final user in widget.users) {
       // Build row with code, title, subtitle, dynamic extras
-      final rowValues = <excel.TextCellValue>[
-        excel.TextCellValue(user.code),
-        excel.TextCellValue(user.title),
-        excel.TextCellValue(user.subtitle),
+      final rowValues = <TextCellValue>[
+        TextCellValue(user.code),
+        TextCellValue(user.title),
+        TextCellValue(user.subtitle),
       ];
       for (var key in allExtrasKeys) {
         final field = user.extras.firstWhere((f) => f.key == key, orElse: () => ExtraField(key: key, value: ''));
-        rowValues.add(excel.TextCellValue(field.value));
+        rowValues.add(TextCellValue(field.value));
       }
 
       // Attendance
@@ -898,16 +625,16 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
           .map((c) => '${c.name} - Days ${((user.scanned)[c.name] ?? []).join(", ")}')
           .join('\n');
 
-      rowValues.add(excel.TextCellValue(categoriesScanned));
+      rowValues.add(TextCellValue(categoriesScanned));
       allDaysSheet.appendRow(rowValues);
 
       // Wrap text for attendance cell
       final attendanceIndex = headers.indexOf('Attendance');
-      final attendanceCell = allDaysSheet.cell(excel.CellIndex.indexByColumnRow(
+      final attendanceCell = allDaysSheet.cell(CellIndex.indexByColumnRow(
         columnIndex: attendanceIndex,
         rowIndex: allDaysSheet.maxRows - 1,
       ));
-      attendanceCell.cellStyle = excel.CellStyle(textWrapping: excel.TextWrapping.WrapText);
+      attendanceCell.cellStyle = CellStyle(textWrapping: TextWrapping.WrapText);
     }
 
     // Individual day sheets (rename "Name" -> "Title")
@@ -917,31 +644,31 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     int totalDays = endDate.difference(startDate).inDays + 1;
 
     for (int day = 1; day <= totalDays; day++) {
-      final daySheet = excelFile['Day $day'];
+      final daySheet = excel['Day $day'];
       final dayHeaders = ['Code', 'Title', ...widget.categories.map((c) => c.name)];
       for (var header in dayHeaders) {
-        final headerCell = daySheet.cell(excel.CellIndex.indexByColumnRow(
+        final headerCell = daySheet.cell(CellIndex.indexByColumnRow(
           columnIndex: dayHeaders.indexOf(header),
           rowIndex: 0,
         ));
         headerCell
-          ..value = excel.TextCellValue(header)
-          ..cellStyle = excel.CellStyle(bold: true, horizontalAlign: excel.HorizontalAlign.Center);
+          ..value = TextCellValue(header)
+          ..cellStyle = CellStyle(bold: true, horizontalAlign: HorizontalAlign.Center);
         daySheet.setColumnAutoFit(headerCell.columnIndex);
       }
       for (final user in widget.users) {
         daySheet.appendRow([
-          excel.TextCellValue(user.code),
-          excel.TextCellValue(user.title),
+          TextCellValue(user.code),
+          TextCellValue(user.title),
         ]);
         for (final category in widget.categories) {
           final days = (user.scanned)[category.name] as List<dynamic>? ?? [];
-          final cell = daySheet.cell(excel.CellIndex.indexByColumnRow(
+          final cell = daySheet.cell(CellIndex.indexByColumnRow(
             columnIndex: dayHeaders.indexOf(category.name),
             rowIndex: daySheet.maxRows - 1,
           ));
-          cell..value = excel.IntCellValue(days.contains(day) ? 1 : 0)
-            ..cellStyle = excel.CellStyle(backgroundColorHex: (days.contains(day) ? "#c1deca" : "#e7c9c7").excelColor);
+          cell..value = IntCellValue(days.contains(day) ? 1 : 0)
+            ..cellStyle = CellStyle(backgroundColorHex: (days.contains(day) ? "#c1deca" : "#e7c9c7").excelColor);
           daySheet.setColumnWidth(cell.columnIndex, 20);
         }
       }
@@ -954,7 +681,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         fileName: fileName,
         type: FileType.custom,
         allowedExtensions: ['xlsx'],
-        bytes: Uint8List.fromList(excelFile.save(fileName: fileName) ?? []),
+        bytes: Uint8List.fromList(excel.save(fileName: fileName) ?? []),
       );
       if (outputPath != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('File saved to $outputPath')));
