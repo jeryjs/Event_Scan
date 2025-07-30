@@ -23,6 +23,7 @@ dependencies:
   excel: ^4.0.6
   shared_preferences: ^2.2.2
   url_launcher: ^6.3.2
+  package_info_plus: ^8.3.0
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:convert';
+import 'dart:io';
 import '../../services/database.dart';
 import '../../services/collection_manager.dart';
 import '../collection/collection_selection_screen.dart';
@@ -122,6 +126,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  Future<void> _checkForUpdates() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      final client = HttpClient();
+      final request = await client.getUrl(Uri.parse('https://api.github.com/repos/jeryjs/Event_Scan/releases/latest'));
+      final response = await request.close();
+      final responseBody = await response.transform(utf8.decoder).join();
+      final data = jsonDecode(responseBody);
+      
+      final latestVersion = data['tag_name'].toString().replaceFirst('v', '');
+      
+      if (latestVersion != packageInfo.version) {
+        final arm64Asset = (data['assets'] as List).firstWhere((asset) => asset['name'].contains('arm64-v8a'), orElse: () => null);
+        _showUpdateDialog(latestVersion, packageInfo.version, arm64Asset?['browser_download_url']);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You have the latest version!')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to check for updates: $e')));
+    }
+  }
+
+  void _showUpdateDialog(String latest, String current, String? downloadUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Update Available'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('New version ($latest) is available!'),
+            Text('Current: $current'),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Later')),
+          if (downloadUrl != null)
+            ElevatedButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: downloadUrl));
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Download link copied!')));
+              },
+              child: const Text('Copy Link'),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSettingTile({
     required String title,
     String? subtitle,
@@ -150,6 +204,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                // App Settings
+                Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('App Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ),
+                      _buildSettingTile(
+                        title: 'Check for Updates',
+                        subtitle: 'Check for new app versions',
+                        icon: Icons.system_update,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _checkForUpdates,
+                      ),
+                      _buildSettingTile(
+                        title: 'Switch Collection',
+                        subtitle: 'Change event collection',
+                        icon: Icons.swap_horiz,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _switchCollection,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
                 // Event Configuration
                 Card(
                   child: Column(
@@ -189,21 +272,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: Text(_endDate != null ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}' : 'Select'),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // App Settings
-                Card(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Text('App Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ),
                       _buildSettingTile(
                         title: 'Categories',
                         subtitle: 'Manage scanning categories',
@@ -215,37 +283,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ).then((_) => setState(() {})),
                       ),
                       _buildSettingTile(
-                        title: 'Switch Collection',
-                        subtitle: 'Change event collection',
-                        icon: Icons.swap_horiz,
-                        trailing: const Icon(Icons.chevron_right),
-                        onTap: _switchCollection,
-                      ),
-                      _buildSettingTile(
                         title: 'Edit Access Code',
                         subtitle: 'Modify collection access (creator only)',
                         icon: Icons.lock,
                         trailing: const Icon(Icons.chevron_right),
                         onTap: _editAccessCode,
                       ),
+
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : () async {
+                            await _saveSettings();
+                            if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+                          },
+                          child: _isSaving
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Save Settings', style: TextStyle(fontSize: 16)),
+                        ),
+                      ),
                     ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Save Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: _isSaving ? null : () async {
-                      await _saveSettings();
-                      if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
-                    },
-                    child: _isSaving
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Save Settings', style: TextStyle(fontSize: 16)),
                   ),
                 ),
               ],
