@@ -137,6 +137,26 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
     });
   }
 
+  void _removeUser(int index) {
+    if (_usersData.length <= 1) return; // Don't allow removing the last user
+    
+    setState(() {
+      _usersData.removeAt(index);
+      final newTabController = TabController(length: _usersData.length, vsync: this);
+      
+      // Adjust current tab index if needed
+      if (_tabController.index >= _usersData.length) {
+        newTabController.index = _usersData.length - 1;
+      } else if (_tabController.index > index) {
+        newTabController.index = _tabController.index - 1;
+      } else {
+        newTabController.index = _tabController.index;
+      }
+      
+      _tabController = newTabController;
+    });
+  }
+
   Future<void> _saveChanges() async {
     if (_isJsonMode) {
       try {
@@ -199,8 +219,23 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                               child: TabBar(
                                 controller: _tabController,
                                 isScrollable: true,
+                                onTap: (index) => setState(() {}), // Refresh to update delete button visibility
                                 tabs: List.generate(_usersData.length, 
-                                  (index) => Tab(text: 'Attendee ${index + 1}')
+                                  (index) => Tab(
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(_usersData.length > 3 ? '${index + 1}' : 'Attendee ${index + 1}'),
+                                        if (_usersData.length > 1 && _tabController.index == index) ...[
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () => _removeUser(index),
+                                            child: const Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  )
                                 ),
                               ),
                             ),
@@ -344,7 +379,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
               if (extras[i].value.isEmpty)
                 Positioned(
                   right: -20,
-                  top: 8,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
                     onPressed: () => setState(() {
