@@ -114,120 +114,141 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-      slivers: [
-        SliverAppBar(
-        expandedHeight: 180,
-        floating: true,
-        title: isSelectionMode 
-          ? Text('${selectedIndices.length} selected')
-          : const Text('Manage Attendees'),
-        leading: isSelectionMode 
-          ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: exitSelectionMode,
-            )
-          : null,
-        actions: isSelectionMode
-          ? [
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: selectedIndices.isNotEmpty ? deleteSelected : null,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 180,
+                floating: true,
+                title: isSelectionMode 
+                  ? Text('${selectedIndices.length} selected')
+                  : const Text('Manage Attendees'),
+                leading: isSelectionMode 
+                  ? IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: exitSelectionMode,
+                    )
+                  : null,
+                actions: isSelectionMode
+                  ? [
+                      IconButton(
+                        icon: const Icon(Icons.delete),
+                        onPressed: selectedIndices.isNotEmpty ? deleteSelected : null,
+                      ),
+                    ]
+                  : null,
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Container(
+                    padding: const EdgeInsets.all(16),
+                    alignment: Alignment.bottomCenter,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.teal.withValues(alpha: 0.4), Colors.cyan.withValues(alpha: 0.1)]),
+                    ),
+                    child: TextField(
+                      onChanged: filterUsers,
+                      decoration: InputDecoration(
+                        hintText: 'Search attendees...',
+                        prefixIcon: const Icon(Icons.search),
+                        fillColor: Colors.blue.withValues(alpha: 0.1),
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ]
-          : null,
-        flexibleSpace: FlexibleSpaceBar(
-          background: Container(
-          padding: const EdgeInsets.all(16),
-          alignment: Alignment.bottomCenter,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [Colors.teal.withValues(alpha: 0.4), Colors.cyan.withValues(alpha: 0.1)]),
-          ),
-          child: TextField(
-            onChanged: filterUsers,
-            decoration: InputDecoration(
-            hintText: 'Search attendees...',
-            prefixIcon: const Icon(Icons.search),
-            fillColor: Colors.blue.withValues(alpha: 0.1),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            ),
-          ),
-          ),
-        ),
-        ),
-        if (filteredUsers.isEmpty)
-        SliverFillRemaining(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.people_outline,
-                  size: 80,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  searchQuery.isEmpty ? 'No attendees found' : 'No results found',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
+              if (filteredUsers.isEmpty)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          searchQuery.isEmpty ? 'No attendees found' : 'No results found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          searchQuery.isEmpty ? 'Add attendees to get started' : 'Try adjusting your search terms',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    var user = filteredUsers[index];
+                    bool isSelected = selectedIndices.contains(index);
+                    
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      elevation: 4,
+                      color: isSelected ? Colors.blue.withValues(alpha: 0.1) : null,
+                      child: ListTile(
+                        leading: isSelectionMode
+                          ? Checkbox(
+                              value: isSelected,
+                              onChanged: (_) => toggleSelection(index),
+                            )
+                          : CircleAvatar(child: Text((user.code.length) > 3 ? user.code.substring(user.code.length - 3) : user.code)),
+                        title: Text(user.title),
+                        subtitle: Text('Code: ${user.code}\n${user.subtitle}'),
+                        trailing: !isSelectionMode
+                          ? IconButton(
+                              icon: const Icon(Icons.edit),
+                              onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
+                            )
+                          : null,
+                        onTap: isSelectionMode
+                          ? () => toggleSelection(index)
+                          : null,
+                        onLongPress: !isSelectionMode
+                          ? () => enterSelectionMode(index)
+                          : null,
+                      ),
+                    );
+                  },
+                  childCount: filteredUsers.length,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  searchQuery.isEmpty ? 'Add attendees to get started' : 'Try adjusting your search terms',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
+            ],
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: FloatingActionButton.extended(
+              onPressed: () async {
+                final result = await showEditUserDialog(context, [BarcodeModel.empty()], canEditMultiple: false);
+                if (result.isNotEmpty && mounted) {
+                  setState(() {
+                    widget.users.addAll(result);
+                    filterUsers(searchQuery);
+                  });
+                }
+              },
+              icon: const Icon(Icons.file_upload),
+              label: const Text('Import'),
             ),
           ),
-        )
-        else
-        SliverList(
-          delegate: SliverChildBuilderDelegate((context, index) {
-            var user = filteredUsers[index];
-            bool isSelected = selectedIndices.contains(index);
-            
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                elevation: 4,
-                color: isSelected ? Colors.blue.withValues(alpha: 0.1) : null,
-                child: ListTile(
-                  leading: isSelectionMode
-                    ? Checkbox(
-                        value: isSelected,
-                        onChanged: (_) => toggleSelection(index),
-                      )
-                    : CircleAvatar(child: Text((user.code.length) > 3 ? user.code.substring(user.code.length - 3) : user.code)),
-                  title: Text(user.title),
-                  subtitle: Text('Code: ${user.code}\n${user.subtitle}'),
-                  trailing: !isSelectionMode
-                    ? IconButton(
-                        icon: const Icon(Icons.edit),
-                        onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
-                      )
-                    : null,
-                  onTap: isSelectionMode
-                    ? () => toggleSelection(index)
-                    : null,
-                  onLongPress: !isSelectionMode
-                    ? () => enterSelectionMode(index)
-                    : null,
-                ),
-              );
-          },
-          childCount: filteredUsers.length,
-          ),
-        ),
-      ],
+        ],
       ),
     );
   }

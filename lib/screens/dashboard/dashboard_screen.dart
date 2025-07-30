@@ -171,17 +171,37 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 
   Widget _buildDashboardTab() {
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          // Stats Cards
-          Padding(
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: _buildStatsCards(),
           ),
-          // Action Buttons
-          _buildActionButtons(),
-        ],
+        ),
+        _buildManageFAB(),
+      ],
+    );
+  }
+
+  Widget _buildManageFAB() {
+    return Positioned(
+      bottom: 16,
+      right: 16,
+      child: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ManageUsersScreen(users: _users),
+            ),
+          );
+          if (result != null) {
+            setState(() => _loadData());
+          }
+        },
+        icon: const Icon(Icons.manage_accounts),
+        label: const Text('Manage'),
       ),
     );
   }
@@ -323,48 +343,4 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     }
   }
 
-  Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Wrap(
-        spacing: 20,
-        runSpacing: 20,
-        alignment: WrapAlignment.center,
-        children: [
-          ElevatedButton.icon(
-            icon: const Icon(Icons.import_export),
-            label: const Text('Import Attendees'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async =>
-                showEditUserDialog(context, [
-                  // Create a new BarcodeModel with the existing extras fields
-                  BarcodeModel.from({
-                    'extras': _users.firstOrNull?.extras
-                        .map((f) => ExtraField(key: f.key, icon: f.icon))
-                        .toList(),
-                  }),
-                ]).then((newUsersData) {
-                  if (newUsersData != _users) setState(_loadData);
-                }),
-          ),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.manage_accounts),
-            label: const Text('Manage Attendees'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () async {
-              Navigator.push(
-                context, MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users))
-              ).then((_) => setState(_updateCategoryCounts));
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
