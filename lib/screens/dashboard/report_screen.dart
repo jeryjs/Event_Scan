@@ -452,17 +452,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         final operator = filter['operator'];
         final value = filter['value'];
         
-        String userValue = '';
-        if (field == 'code') userValue = user.code;
-        else if (field == 'title') userValue = user.title;
-        else if (field == 'subtitle') userValue = user.subtitle;
-        else userValue = user.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value;
-        
-        switch (operator) {
-          case 'contains': if (!userValue.toLowerCase().contains(value.toLowerCase())) return false;
-          case 'equals': if (userValue != value) return false;
-          case 'in': if (!(value as List).contains(userValue)) return false;
-        }
+        if (!user.matchesFilter(field, operator, value)) return false;
       }
 
       return scannedOnDay && user.query(_searchQuery.toLowerCase());
@@ -504,15 +494,15 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                       subtitle: isActive ? Text('${activeFilter['operator']}: ${activeFilter['value']}', style: const TextStyle(fontSize: 12, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
                       trailing: isActive ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setDialogState(() => _filters.remove(field))) : null,
                       children: isActive ? [] : [
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Row(
-                          children: ['contains', 'equals', 'in'].map((op) => Expanded(child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Wrap(
+                          spacing: 4, runSpacing: 4,
+                          children: ['contains', 'equals', 'starts with', 'ends with', 'not contains', 'not equals', 'in'].map((op) => 
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4)),
                               onPressed: () => _addFilter(field, op),
-                              child: Text(op, style: const TextStyle(fontSize: 12)),
-                            ),
-                          ))).toList(),
+                              child: Text(op, style: const TextStyle(fontSize: 11)),
+                            )
+                          ).toList(),
                         ))
                       ],
                     ),

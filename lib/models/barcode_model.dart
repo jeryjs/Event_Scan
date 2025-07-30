@@ -129,4 +129,25 @@ class BarcodeModel {
            extras.map((f) => f.value).any((v) => v.toString().toLowerCase().contains(searchTerm)) ||
            timestamp.toDate().toString().contains(searchTerm);
   }
+
+  bool matchesFilter(String field, String operator, dynamic value) {
+    String fieldValue = '';
+    switch (field) {
+      case 'code': fieldValue = code;
+      case 'title': fieldValue = title;
+      case 'subtitle': fieldValue = subtitle;
+      default: fieldValue = extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value;
+    }
+    
+    switch (operator) {
+      case 'contains': return fieldValue.toLowerCase().contains(value.toLowerCase());
+      case 'equals': return fieldValue == value;
+      case 'starts with': return fieldValue.toLowerCase().startsWith(value.toLowerCase());
+      case 'ends with': return fieldValue.toLowerCase().endsWith(value.toLowerCase());
+      case 'not contains': return !fieldValue.toLowerCase().contains(value.toLowerCase());
+      case 'not equals': return fieldValue != value;
+      case 'in': return (value as List).contains(fieldValue);
+      default: return true;
+    }
+  }
 }
