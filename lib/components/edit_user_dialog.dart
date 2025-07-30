@@ -373,7 +373,6 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                 if (_isJsonMode)
                   IconButton.outlined(icon: Icon(Icons.auto_fix_high), tooltip: "Format JSON", visualDensity: VisualDensity.compact, 
                     onPressed: () => _jsonController.text = JsonEncoder.withIndent('  ').convert(jsonDecode(_jsonController.text)),
-                    onLongPress: () => _jsonController.text = jsonEncode(_usersData, toEncodable: _customEncoder),
                   ),
                 const Spacer(),
                 TextButton.icon(
