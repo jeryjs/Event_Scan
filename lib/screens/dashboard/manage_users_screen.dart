@@ -216,7 +216,10 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                               icon: const Icon(Icons.edit),
                               onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false).then((r) {
                                 if (r != null && r.isNotEmpty) {
-                                  setState(() => filteredUsers[index] = r.first);
+                                  setState(() {
+                                    widget.users[widget.users.indexOf(user)] = r.first;
+                                    filteredUsers[index] = r.first;
+                                  });
                                 }
                               }),
                             )

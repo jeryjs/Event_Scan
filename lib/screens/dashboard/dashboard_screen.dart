@@ -1,13 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:event_scan/models/barcode_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+
 import '../../components/custom_step_slider.dart';
-import '../../components/edit_user_dialog.dart';
+import '../../models/category_model.dart';
+import '../../services/database.dart';
 import 'manage_users_screen.dart';
 import 'report_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../services/database.dart';
-import '../../models/category_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   final List<CategoryModel> categories;
@@ -189,17 +189,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       bottom: 16,
       right: 16,
       child: FloatingActionButton.extended(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ManageUsersScreen(users: _users),
-            ),
-          );
-          if (result != null) {
-            setState(() => _loadData());
-          }
-        },
+        onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (context) => ManageUsersScreen(users: _users))).then((_) => setState(() {})),
         icon: const Icon(Icons.manage_accounts),
         label: const Text('Manage'),
       ),
