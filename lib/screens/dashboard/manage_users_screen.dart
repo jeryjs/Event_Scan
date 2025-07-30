@@ -63,8 +63,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Users'),
-        content: Text('Are you sure you want to delete ${selectedIndices.length} user(s)?'),
+        title: const Text('Delete Attendees'),
+        content: Text('Are you sure you want to delete ${selectedIndices.length} attendee(s)?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -80,7 +80,7 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
               // Capture a local context for SnackBar usage
               final sm = ScaffoldMessenger.of(context);
               // Show loading indicator
-              if (mounted) sm.showSnackBar(const SnackBar(content: Text('Deleting users...')));
+              if (mounted) sm.showSnackBar(const SnackBar(content: Text('Deleting attendees...')));
 
               try {
                 // Delete from database
@@ -96,12 +96,12 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                     exitSelectionMode();
                   });
 
-                  sm.showSnackBar(SnackBar(content: Text('Deleted ${userCodes.length} user(s) successfully')));
+                  sm.showSnackBar(SnackBar(content: Text('Deleted ${userCodes.length} attendee(s) successfully')));
                 } else {
-                  sm.showSnackBar(const SnackBar(content: Text('Failed to delete users')));
+                  sm.showSnackBar(const SnackBar(content: Text('Failed to delete attendees')));
                 }
               } catch (e) {
-                sm.showSnackBar(SnackBar(content: Text('Error deleting users: $e')));
+                sm.showSnackBar(SnackBar(content: Text('Error deleting attendees: $e')));
               }
             },
             child: const Text('Delete'),
