@@ -31,6 +31,8 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   bool _isJsonMode = false;
   late TextEditingController _jsonController;
   String? _jsonError;
+  bool _isSaving = false;
+  String? _saveError;
 
   @override
   void initState() {
@@ -151,20 +153,47 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   }
 
   Future<void> _saveChanges() async {
-    if (_isJsonMode) {
-      try {
-        final decoded = jsonDecode(_jsonController.text) as List;
-        _usersData = decoded.map((e) => BarcodeModel.from(e, strict: true)).toList();
-        _jsonError = null;
-      } catch (error, stackTrace) {
-        setState(() => _jsonError = 'Invalid JSON format:\n$error');
-        debugPrintStack(stackTrace: stackTrace);
-        return;
+    setState(() {
+      _isSaving = true;
+      _saveError = null;
+    });
+
+    try {
+      if (_isJsonMode) {
+        try {
+          final decoded = jsonDecode(_jsonController.text) as List;
+          _usersData = decoded.map((e) => BarcodeModel.from(e, strict: true)).toList();
+          _jsonError = null;
+        } catch (error, stackTrace) {
+          setState(() => _jsonError = 'Invalid JSON format:\n$error');
+          debugPrintStack(stackTrace: stackTrace);
+          return;
+        }
       }
-    }
-    await Database.updateUsers(_usersData);
-    if (mounted) { 
-      Navigator.of(context).pop(_usersData);
+
+      // Check for duplicate codes
+      final codes = <String>[];
+      final duplicates = <String>[];
+      for (var user in _usersData) {
+        if (user.code.trim().isEmpty) return setState(() {
+          _saveError = 'All users must have a code';
+          _isSaving = false;
+        });
+        if (codes.contains(user.code)) duplicates.add(user.code); else codes.add(user.code);
+      }
+      if (duplicates.isNotEmpty) return setState(() {
+        _saveError = 'Duplicate codes found: ${duplicates.join(', ')}';
+        _isSaving = false;
+      });
+
+      await Database.updateUsers(_usersData);
+      
+      if (mounted) Navigator.of(context).pop(_usersData);
+    } catch (error) {
+      setState(() {
+        _saveError = 'Failed to save: $error';
+        _isSaving = false;
+      });
     }
   }
 
@@ -317,20 +346,29 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
                   style: const TextStyle(color: Colors.red),
                 ),
               ),
+            if (_saveError != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(_saveError!, style: const TextStyle(color: Colors.red)),
+              ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton.icon(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.cancel),
                   label: const Text('Cancel'),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: _saveChanges,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save'),
+                  onPressed: _isSaving ? null : _saveChanges,
+                  icon: _isSaving ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ) : const Icon(Icons.save),
+                  label: Text(_isSaving ? 'Saving...' : 'Save'),
                 ),
               ],
             ),

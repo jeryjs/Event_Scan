@@ -243,10 +243,8 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             right: 16,
             child: FloatingActionButton.extended(
               onPressed: () async {
-                await showEditUserDialog(context, [BarcodeModel.empty()], canEditMultiple: false).then((result) {
-                  setState(() {
-                    if (result != null) widget.users.addAll(result);
-                  });
+                await showEditUserDialog(context, [BarcodeModel.empty()]).then((result) {
+                  setState(() { if (result != null) widget.users.addAll(result); });
                 });
               },
               icon: const Icon(Icons.file_upload),
