@@ -122,39 +122,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Widget _buildSettingCard({
+  Widget _buildSettingTile({
     required String title,
-    required String subtitle,
+    String? subtitle,
     required Widget trailing,
     VoidCallback? onTap,
-    Widget? leading,
+    IconData? icon,
   }) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: leading,
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 8),
-          child: Text(
-            subtitle,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 14,
-            ),
-          ),
-        ),
-        trailing: trailing,
-        onTap: onTap,
-      ),
+    return ListTile(
+      leading: icon != null ? Icon(icon, color: Colors.grey[600]) : null,
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle, style: TextStyle(color: Colors.grey[600])) : null,
+      trailing: trailing,
+      onTap: onTap,
     );
   }
 
@@ -163,128 +143,110 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
-        elevation: 0,
+        centerTitle: true,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'App Configuration',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // Event Configuration
+                Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('Event Configuration', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
-                    ),
+                      _buildSettingTile(
+                        title: 'Event Title',
+                        icon: Icons.title,
+                        trailing: SizedBox(
+                          width: 150,
+                          child: TextField(
+                            controller: _eventTitleController,
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      _buildSettingTile(
+                        title: 'Start Date',
+                        icon: Icons.event,
+                        trailing: TextButton(
+                          onPressed: () => _selectStartDate(context),
+                          child: Text(_startDate != null ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}' : 'Select'),
+                        ),
+                      ),
+                      _buildSettingTile(
+                        title: 'End Date',
+                        icon: Icons.event_available,
+                        trailing: TextButton(
+                          onPressed: () => _selectEndDate(context),
+                          child: Text(_endDate != null ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}' : 'Select'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SliverList(
-                  delegate: SliverChildListDelegate([
-                    _buildSettingCard(
-                      title: 'Event Title',
-                      subtitle: 'Set the event title',
-                      leading: const Icon(Icons.title),
-                      trailing: SizedBox(
-                        width: 200,
-                        child: TextField(
-                          controller: _eventTitleController,
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
+
+                const SizedBox(height: 16),
+
+                // App Settings
+                Card(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: Text('App Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
-                    ),
-                    _buildSettingCard(
-                      title: 'Switch Collection',
-                      subtitle: 'Change to a different event collection',
-                      leading: const Icon(Icons.swap_horiz),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: _switchCollection,
-                    ),
-                    _buildSettingCard(
-                      title: 'Start Date',
-                      subtitle: 'Configure the event start date',
-                      leading: const Icon(Icons.calendar_today),
-                      trailing: TextButton(
-                        onPressed: () => _selectStartDate(context),
-                        child: Text(
-                          _startDate != null
-                              ? '${_startDate!.day}/${_startDate!.month}/${_startDate!.year}'
-                              : 'Select',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    _buildSettingCard(
-                      title: 'End Date',
-                      subtitle: 'Configure the event end date',
-                      leading: const Icon(Icons.calendar_today),
-                      trailing: TextButton(
-                        onPressed: () => _selectEndDate(context),
-                        child: Text(
-                          _endDate != null
-                              ? '${_endDate!.day}/${_endDate!.month}/${_endDate!.year}'
-                              : 'Select',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    _buildSettingCard(
-                      title: 'Categories',
-                      subtitle: 'Manage scanning categories',
-                      leading: const Icon(Icons.category_outlined),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: () {
-                        showDialog(
+                      _buildSettingTile(
+                        title: 'Categories',
+                        subtitle: 'Manage scanning categories',
+                        icon: Icons.category,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () => showDialog(
                           context: context,
                           builder: (context) => const ManageCategoriesDialog(),
-                        ).then((_) {
-                          setState(() {}); // Refresh settings screen if needed
-                        });
-                      },
-                    ),
-                    _buildSettingCard(
-                      title: 'Edit Access Code',
-                      subtitle: 'Modify collection access code (creator only)',
-                      leading: const Icon(Icons.lock_outline),
-                      trailing: const Icon(Icons.arrow_forward_ios),
-                      onTap: _editAccessCode,
-                    ),
-                    const SizedBox(height: 20),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: ElevatedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () async {
-                                final navigator = Navigator.of(context);
-                                await _saveSettings();
-                                if (mounted) {
-                                  navigator.popUntil((route) => route.isFirst);
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: _isSaving
-                            ? const CircularProgressIndicator(
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
-                              )
-                            : const Text(
-                                'Save Settings',
-                                style: TextStyle(fontSize: 16),
-                              ),
+                        ).then((_) => setState(() {})),
                       ),
-                    ),
-                  ]),
+                      _buildSettingTile(
+                        title: 'Switch Collection',
+                        subtitle: 'Change event collection',
+                        icon: Icons.swap_horiz,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _switchCollection,
+                      ),
+                      _buildSettingTile(
+                        title: 'Edit Access Code',
+                        subtitle: 'Modify collection access (creator only)',
+                        icon: Icons.lock,
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: _editAccessCode,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Save Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _isSaving ? null : () async {
+                      await _saveSettings();
+                      if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
+                    },
+                    child: _isSaving
+                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Text('Save Settings', style: TextStyle(fontSize: 16)),
+                  ),
                 ),
               ],
             ),
