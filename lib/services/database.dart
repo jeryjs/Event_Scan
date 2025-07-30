@@ -67,15 +67,6 @@ class Database {
         timestamp: data['timestamp'] ?? Timestamp.now(),
         isScanned: isScanned,
       );
-
-      // return {
-      //   'code': data['code'],
-      //   'title': data['title'],
-      //   'subtitle': data['subtitle'],
-      //   'extras': data['extras'],
-      //   'scanned': scanned,
-      //   'isScanned': isScanned,
-      // };
     }
     return null;
   }
@@ -209,23 +200,22 @@ class Database {
     }
   }
 
-  static Future<void> updateUsers(List<Map<String, dynamic>> usersData) async {
+  static Future<void> updateUsers(List<BarcodeModel> usersData) async {
     final batch = _firestore.batch();
     final collection = _getCurrentCollection();
 
     for (var userData in usersData) {
-      final docRef = _firestore.collection(collection).doc(userData['code']);
+      final docRef = _firestore.collection(collection).doc(userData.code);
       
       // Convert extras to proper format using ExtraField.fromDynamic
-      final extras = ExtraField.fromDynamic(userData['extras']);
-      final extrasData = extras.map((field) => {'key': field.key, ...field.toMap()}).toList();
+      final extrasData = userData.extras.map((field) => field.toMap()).toList();
       
       batch.set(docRef, {
-        'code': userData['code'],
-        'title': userData['title'],
-        'subtitle': userData['subtitle'],
+        'code': userData.code,
+        'title': userData.title,
+        'subtitle': userData.subtitle,
         'extras': extrasData,
-        'scanned': userData['scanned'] ?? {},
+        'scanned': userData.scanned,
         'timestamp': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }

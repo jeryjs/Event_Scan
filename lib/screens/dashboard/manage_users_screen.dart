@@ -214,7 +214,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
                         trailing: !isSelectionMode
                           ? IconButton(
                               icon: const Icon(Icons.edit),
-                              onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false),
+                              onPressed: () => showEditUserDialog(context, [user], canEditMultiple: false).then((r) {
+                                if (r != null && r.isNotEmpty) {
+                                  setState(() => filteredUsers[index] = r.first);
+                                }
+                              }),
                             )
                           : null,
                         onTap: isSelectionMode
@@ -236,13 +240,11 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
             right: 16,
             child: FloatingActionButton.extended(
               onPressed: () async {
-                final result = await showEditUserDialog(context, [BarcodeModel.empty()], canEditMultiple: false);
-                if (result.isNotEmpty && mounted) {
+                await showEditUserDialog(context, [BarcodeModel.empty()], canEditMultiple: false).then((result) {
                   setState(() {
-                    widget.users.addAll(result);
-                    filterUsers(searchQuery);
+                    if (result != null) widget.users.addAll(result);
                   });
-                }
+                });
               },
               icon: const Icon(Icons.file_upload),
               label: const Text('Import'),

@@ -20,7 +20,7 @@ dynamic _customEncoder(dynamic item) {
   if (item is BarcodeModel) return item.toMap();
   if (item is Timestamp) return item.millisecondsSinceEpoch;
   if (item is IconPickerIcon) return serializeIcon(item); // Not used, but kept for reference
-  if (item is ExtraField) return item.toJson();
+  if (item is ExtraField) return item.toMap();
   return item;
 }
 
@@ -47,16 +47,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   }
 
   void _updateBarcodeData(int userIndex, dynamic data) {
-    _usersData[userIndex] = _usersData[userIndex].copyWith(
-      code: data['code'],
-      title: data['title'],
-      subtitle: data['subtitle'],
-      extras: ExtraField.fromDynamic(data['extras']),
-      scanned: (data['scanned'] as Map<String, dynamic>? ?? {}).map(
-        (key, value) => MapEntry(key, (value as List).map((e) => e as int).toList()),
-      ),
-      timestamp: data['timestamp'] ?? Timestamp.now(),
-    );
+    _usersData[userIndex] = _usersData[userIndex].copyWith(data);
   }
 
   void _startAddingField() {
@@ -169,7 +160,7 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         return;
       }
     }
-    await Database.updateUsers(_usersData.map((u) => u.toMap()).toList());
+    await Database.updateUsers(_usersData);
     if (mounted) { 
       Navigator.of(context).pop(_usersData);
     }
@@ -454,13 +445,12 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
   }
 }
 
-Future<List<BarcodeModel>> showEditUserDialog(BuildContext context, List<BarcodeModel> usersData, {
+Future<List<BarcodeModel>?> showEditUserDialog(BuildContext context, List<BarcodeModel> usersData, {
   bool canEditMultiple = true,
 }) async {
   if (usersData.isEmpty) usersData = [BarcodeModel.empty()];
-  final result = await showDialog<List<BarcodeModel>>(
+  return await showDialog<List<BarcodeModel>>(
     context: context,
     builder: (context) => EditUserDialog(usersData: usersData, canEditMultiple: canEditMultiple),
   );
-  return result ?? usersData;
 }

@@ -20,11 +20,7 @@ class ExtraField {
     return ExtraField(key: key, value: data?.toString() ?? '');
   }
 
-  Map<String, dynamic> toMap() => icon != null 
-      ? {'value': value, 'icon': icon!.codePoint}
-      : {'value': value};
-
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toMap() => {
     'key': key,
     'value': value,
     if (icon != null) 'icon': icon!.codePoint,
@@ -109,24 +105,8 @@ class BarcodeModel {
 
   factory BarcodeModel.empty() => BarcodeModel(code: '', title: '', subtitle: '', extras: [], scanned: {}, timestamp: Timestamp.now(), isScanned: null);
 
-  BarcodeModel copyWith({
-    String? code,
-    String? title,
-    String? subtitle,
-    List<ExtraField>? extras,
-    Map<String, List<int>>? scanned,
-    Timestamp? timestamp,
-    bool? isScanned,
-  }) {
-    return BarcodeModel(
-      code: code ?? this.code,
-      title: title ?? this.title,
-      subtitle: subtitle ?? this.subtitle,
-      extras: extras ?? this.extras,
-      scanned: scanned ?? this.scanned,
-      timestamp: timestamp ?? this.timestamp,
-      isScanned: isScanned ?? this.isScanned,
-    );
+  BarcodeModel copyWith(Map<String, dynamic> data) {
+    return BarcodeModel.from({...toMap(), ...data});
   }
 
   Map<String, dynamic> toMap() {
@@ -134,7 +114,7 @@ class BarcodeModel {
       'code': code,
       'title': title,
       'subtitle': subtitle,
-      'extras': extras.map((field) => {'key': field.key, ...field.toMap()}).toList(),
+      'extras': extras.map((field) => field.toMap()).toList(),
       'scanned': scanned,
       'timestamp': timestamp,
     };
