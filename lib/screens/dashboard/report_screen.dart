@@ -96,6 +96,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: IconButton(
                         icon: Icon(_filters.isEmpty ? Icons.filter_list : Icons.filter_list_off),
+                        color: _filters.isEmpty ? Colors.white70 : Colors.amber,
                         tooltip: 'Filter Attendees',
                         onPressed: _showFilterDialog,
                         onLongPress: () => setState(() => _filters.clear()),
@@ -473,7 +474,8 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     showDialog(context: context, builder: (context) => StatefulBuilder(
       builder: (context, setDialogState) => AlertDialog(
         title: Row(children: [const Icon(Icons.filter_list, size: 20), const SizedBox(width: 8), const Text('Filters')]),
-        content: SizedBox(width: 320, height: 420, child: Column(
+        content: SizedBox(width: 320, child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
@@ -485,35 +487,39 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
               ),
             ),
             const SizedBox(height: 12),
-            Expanded(child: ListView(
-              children: fields.map((field) {
-                final isActive = _filters.containsKey(field);
-                final activeFilter = _filters[field];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  color: isActive ? Colors.green.withValues(alpha: 0.1) : null,
-                  child: ExpansionTile(
-                    dense: true,
-                    leading: Icon(_getFieldIcon(field), size: 18),
-                    title: Text(field, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                    subtitle: isActive ? Text('${activeFilter['operator']}: ${activeFilter['value']}', style: const TextStyle(fontSize: 12, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
-                    trailing: isActive ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setDialogState(() => _filters.remove(field))) : null,
-                    children: isActive ? [] : [
-                      Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Row(
-                        children: ['contains', 'equals', 'in'].map((op) => Expanded(child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 2),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
-                            onPressed: () => _addFilter(field, op),
-                            child: Text(op, style: const TextStyle(fontSize: 12)),
-                          ),
-                        ))).toList(),
-                      ))
-                    ],
-                  ),
-                );
-              }).toList(),
-            )),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 420),
+              child: ListView(
+                shrinkWrap: true,
+                children: fields.map((field) {
+                  final isActive = _filters.containsKey(field);
+                  final activeFilter = _filters[field];
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    color: isActive ? Colors.green.withValues(alpha: 0.1) : null,
+                    child: ExpansionTile(
+                      dense: true,
+                      leading: Icon(_getFieldIcon(field), size: 18),
+                      title: Text(field, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                      subtitle: isActive ? Text('${activeFilter['operator']}: ${activeFilter['value']}', style: const TextStyle(fontSize: 12, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                      trailing: isActive ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setDialogState(() => _filters.remove(field))) : null,
+                      children: isActive ? [] : [
+                        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Row(
+                          children: ['contains', 'equals', 'in'].map((op) => Expanded(child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                              onPressed: () => _addFilter(field, op),
+                              child: Text(op, style: const TextStyle(fontSize: 12)),
+                            ),
+                          ))).toList(),
+                        ))
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ],
         )),
         actions: [
