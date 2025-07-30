@@ -36,6 +36,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
   final ScrollController _scrollController = ScrollController();
   bool _isExporting = false;
   bool _isFabExpanded = false;
+  final Map<String, dynamic> _filters = {};
   
   @override
   void initState() {
@@ -91,8 +92,14 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                   child: TextField(
                     onChanged: (value) => setState(() => _searchQuery = value),
                     decoration: InputDecoration(
-                      hintText: 'Search users...',
+                      hintText: 'Search Attendees...',
                       prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        icon: Icon(_filters.isEmpty ? Icons.filter_list : Icons.filter_list_off),
+                        tooltip: 'Filter Attendees',
+                        onPressed: _showFilterDialog,
+                        onLongPress: () => setState(() => _filters.clear()),
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: BorderSide.none,
@@ -430,8 +437,77 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         scannedOnDay = days.isNotEmpty && (widget.selectedDay == 0 || days.contains(widget.selectedDay));
       }
 
+      // Apply filters
+      for (var entry in _filters.entries) {
+        final field = entry.key;
+        final filter = entry.value;
+        final operator = filter['operator'];
+        final value = filter['value'];
+        
+        String userValue = '';
+        if (field == 'code') userValue = user.code;
+        else if (field == 'title') userValue = user.title;
+        else if (field == 'subtitle') userValue = user.subtitle;
+        else userValue = user.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value;
+        
+        switch (operator) {
+          case 'contains': if (!userValue.toLowerCase().contains(value.toLowerCase())) return false;
+          case 'equals': if (userValue != value) return false;
+          case 'in': if (!(value as List).contains(userValue)) return false;
+        }
+      }
+
       return scannedOnDay && user.query(_searchQuery.toLowerCase());
     }).toList();
+  }
+
+  void _showFilterDialog() {
+    final fields = ['code', 'title', 'subtitle', ...widget.users.expand((u) => u.extras.map((e) => e.key)).toSet()];
+    showDialog(context: context, builder: (context) => AlertDialog(
+      title: const Text('Filters'),
+      content: SizedBox(width: 300, height: 400, child: ListView(
+        children: fields.map((field) => ExpansionTile(
+          title: Text(field),
+          children: [
+            for (var op in ['contains', 'equals', 'in']) ListTile(
+              title: Text(op),
+              onTap: () => _addFilter(field, op),
+            )
+          ],
+        )).toList(),
+      )),
+      actions: [
+        TextButton(onPressed: () => setState(() { _filters.clear(); Navigator.pop(context); }), child: const Text('Clear')),
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+      ],
+    ));
+  }
+
+  void _addFilter(String field, String operator) {
+    Navigator.pop(context);
+    final values = widget.users.map((u) => field == 'code' ? u.code : field == 'title' ? u.title : field == 'subtitle' ? u.subtitle : u.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value).where((v) => v.isNotEmpty).toSet().toList();
+    
+    if (operator == 'in' && values.length <= 50) {
+      showDialog(context: context, builder: (context) {
+        List<String> selected = [];
+        return StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
+          title: Text('Select $field values'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: values.map((v) => CheckboxListTile(
+            title: Text(v), value: selected.contains(v), onChanged: (bool? val) => setDialogState(() => val! ? selected.add(v) : selected.remove(v))
+          )).toList()),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': selected}); Navigator.pop(context); }, child: const Text('Apply'))],
+        ));
+      });
+    } else {
+      showDialog(context: context, builder: (context) {
+        String value = '';
+        return AlertDialog(
+          title: Text('Filter $field'),
+          content: TextField(onChanged: (v) => value = v, decoration: InputDecoration(hintText: 'Enter value')),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': value}); Navigator.pop(context); }, child: const Text('Apply'))],
+        );
+      });
+    }
   }
 
   Future<void> _exportToJson() async {
