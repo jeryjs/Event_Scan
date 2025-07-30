@@ -448,11 +448,14 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
       for (var entry in _filters.entries) {
         if (entry.key == '_includeNonScanned') continue; // Skip system filter
         final field = entry.key;
-        final filter = entry.value;
-        final operator = filter['operator'];
-        final value = filter['value'];
+        final fieldFilters = entry.value as List<Map<String, dynamic>>;
         
-        if (!user.matchesFilter(field, operator, value)) return false;
+        // All filters for this field must pass (AND logic within field)
+        for (var filter in fieldFilters) {
+          final operator = filter['operator'];
+          final value = filter['value'];
+          if (!user.matchesFilter(field, operator, value)) return false;
+        }
       }
 
       return scannedOnDay && user.query(_searchQuery.toLowerCase());
@@ -482,8 +485,8 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
               child: ListView(
                 shrinkWrap: true,
                 children: fields.map((field) {
-                  final isActive = _filters.containsKey(field);
-                  final activeFilter = _filters[field];
+                  final fieldFilters = _filters[field] as List<Map<String, dynamic>>? ?? [];
+                  final isActive = fieldFilters.isNotEmpty;
                   return Card(
                     margin: const EdgeInsets.only(bottom: 4),
                     color: isActive ? Colors.green.withValues(alpha: 0.1) : null,
@@ -491,10 +494,29 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                       dense: true,
                       leading: Icon(_getFieldIcon(field), size: 18),
                       title: Text(field, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                      subtitle: isActive ? Text('${activeFilter['operator']}: ${activeFilter['value']}', style: const TextStyle(fontSize: 12, color: Colors.green), maxLines: 1, overflow: TextOverflow.ellipsis) : null,
-                      trailing: isActive ? IconButton(icon: const Icon(Icons.clear, size: 16), onPressed: () => setDialogState(() => _filters.remove(field))) : null,
-                      children: isActive ? [] : [
-                        Padding(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4), child: Wrap(
+                      subtitle: isActive ? Text('${fieldFilters.length} filter${fieldFilters.length > 1 ? 's' : ''}', style: const TextStyle(fontSize: 12, color: Colors.green)) : null,
+                      children: [
+                        if (isActive) Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          child: Wrap(
+                            spacing: 4, runSpacing: 4,
+                            children: fieldFilters.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final filter = entry.value;
+                              return Chip(
+                                label: Text('${filter['operator']}: ${filter['value']}', style: const TextStyle(fontSize: 10)),
+                                deleteIcon: const Icon(Icons.close, size: 14),
+                                onDeleted: () => setDialogState(() {
+                                  fieldFilters.removeAt(index);
+                                  if (fieldFilters.isEmpty) _filters.remove(field);
+                                }),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        Wrap(
                           spacing: 4, runSpacing: 4,
                           children: ['contains', 'equals', 'starts with', 'ends with', 'not contains', 'not equals', 'in'].map((op) => 
                             ElevatedButton(
@@ -503,7 +525,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
                               child: Text(op, style: const TextStyle(fontSize: 11)),
                             )
                           ).toList(),
-                        ))
+                        ),
                       ],
                     ),
                   );
@@ -539,6 +561,14 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
     Navigator.pop(context);
     final values = widget.users.map((u) => field == 'code' ? u.code : field == 'title' ? u.title : field == 'subtitle' ? u.subtitle : u.extras.firstWhere((e) => e.key == field, orElse: () => ExtraField(key: '', value: '')).value).where((v) => v.isNotEmpty).toSet().toList();
     
+    void addFilterToField(String operator, dynamic value) {
+      setState(() {
+        final fieldFilters = _filters[field] as List<Map<String, dynamic>>? ?? [];
+        fieldFilters.add({'operator': operator, 'value': value});
+        _filters[field] = fieldFilters;
+      });
+    }
+    
     if (operator == 'in' && values.length <= 50) {
       showDialog(context: context, builder: (context) {
         List<String> selected = [];
@@ -547,7 +577,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
           content: Column(mainAxisSize: MainAxisSize.min, children: values.map((v) => CheckboxListTile(
             title: Text(v), value: selected.contains(v), onChanged: (bool? val) => setDialogState(() => val! ? selected.add(v) : selected.remove(v))
           )).toList()),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': selected}); Navigator.pop(context); }, child: const Text('Apply'))],
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { addFilterToField(operator, selected); Navigator.pop(context); }, child: const Text('Apply'))],
         ));
       });
     } else {
@@ -556,7 +586,7 @@ class _ReportScreenState extends State<ReportScreen> with SingleTickerProviderSt
         return AlertDialog(
           title: Text('Filter $field'),
           content: TextField(onChanged: (v) => value = v, decoration: InputDecoration(hintText: 'Enter value')),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { setState(() => _filters[field] = {'operator': operator, 'value': value}); Navigator.pop(context); }, child: const Text('Apply'))],
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), TextButton(onPressed: () { addFilterToField(operator, value); Navigator.pop(context); }, child: const Text('Apply'))],
         );
       });
     }
