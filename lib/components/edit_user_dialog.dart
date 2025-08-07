@@ -193,10 +193,10 @@ class _EditUserDialogState extends State<EditUserDialog> with TickerProviderStat
         });
         if (codes.contains(user.code)) duplicates.add(user.code); else codes.add(user.code);
       }
-      if (duplicates.isNotEmpty) return setState(() {
-        _saveError = 'Duplicate codes found: ${duplicates.join(', ')}';
-        _isSaving = false;
-      });
+      // if (duplicates.isNotEmpty) return setState(() {
+      //   _saveError = 'Duplicate codes found: ${duplicates.join(', ')}';
+      //   _isSaving = false;
+      // });
 
       await Database.updateUsers(_usersData);
       
