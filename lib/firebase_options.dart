@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -57,7 +54,16 @@ class DefaultFirebaseOptions {
     appId: '1:1012516305334:android:75027e473812cdb1e8a917',
     messagingSenderId: '1012516305334',
     projectId: 'partyscan-c9c01',
-    storageBucket: 'partyscan-c9c01.appspot.com',
+    storageBucket: 'partyscan-c9c01.firebasestorage.app',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyCXbH_e6MUEtWi3eIzXj3GeL2oWdnevyys',
+    appId: '1:1012516305334:ios:db0a5ba2d10d24dee8a917',
+    messagingSenderId: '1012516305334',
+    projectId: 'partyscan-c9c01',
+    storageBucket: 'partyscan-c9c01.firebasestorage.app',
+    iosBundleId: 'com.jery.eventScan',
   );
 
 }
