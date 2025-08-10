@@ -2,50 +2,146 @@ name: Publish New Release
 
 on:
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: 'Include Android APKs in release'
+        required: true
+        type: boolean
+        default: true
+      build_ios:
+        description: 'Include iOS IPAs in release'
+        required: true
+        type: boolean
+        default: true
 
 jobs:
-  build:
+  trigger-build:
     runs-on: ubuntu-latest
-
+    outputs:
+      run-id: ${{ steps.trigger.outputs.run-id }}
+      version: ${{ steps.get_version.outputs.version }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.32.6'
-
-    - name: Write key.properties
-      run: echo "${{ secrets.KEY_PROPERTIES }}" > android/key.properties
-
-    - name: Write key.jks
-      run: echo "${{ secrets.KEY_JKS }}" | base64 --decode > android/key.jks
-
-    - name: Accept Android SDK Licenses
-      run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-
-    - name: Build APK
-      run: |
-        flutter pub get
-        dart run flutter_iconpicker:generate_packs --packs material
-        flutter build apk --release --split-per-abi --no-tree-shake-icons
 
     - name: Get version from pubspec.yaml
       id: get_version
       run: |
         VERSION=$(grep '^version: ' pubspec.yaml | sed 's/version: \(.*\)+.*$/\1/')
         echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Trigger build workflow
+      id: trigger
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const response = await github.rest.actions.createWorkflowDispatch({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'build.yml',
+            ref: context.ref,
+            inputs: {
+              build_android: '${{ inputs.build_android }}',
+              build_ios: '${{ inputs.build_ios }}'
+            }
+          });
+          
+          // Wait a moment for the workflow to start
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Find the run ID
+          const runs = await github.rest.actions.listWorkflowRuns({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            workflow_id: 'build.yml',
+            head_sha: context.sha
+          });
+          
+          const runId = runs.data.workflow_runs[0].id;
+          core.setOutput('run-id', runId);
+          return runId;
+
+  wait-for-build:
+    needs: trigger-build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Wait for build completion
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const runId = ${{ needs.trigger-build.outputs.run-id }};
+          
+          while (true) {
+            const run = await github.rest.actions.getWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: runId
+            });
+            
+            if (run.data.status === 'completed') {
+              if (run.data.conclusion === 'success') {
+                console.log('Build completed successfully');
+                break;
+              } else {
+                throw new Error(`Build failed with conclusion: ${run.data.conclusion}`);
+              }
+            }
+            
+            console.log(`Build status: ${run.data.status}`);
+            await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30 seconds
+          }
+
+  release:
+    needs: [trigger-build, wait-for-build]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        run-id: ${{ needs.trigger-build.outputs.run-id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path: ./artifacts
+
+    - name: Extract APKs from artifacts
+      if: ${{ inputs.build_android == true }}
+      run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
+        mkdir -p ./apks
+        
+        # Extract APKs from artifact zips
+        unzip "./artifacts/Event_Scan-v$VERSION-arm64-v8a-release.apk/Event_Scan-v$VERSION-arm64-v8a-release.apk.zip" -d ./apks/
+        unzip "./artifacts/Event_Scan-v$VERSION-armeabi-v7a-release.apk/Event_Scan-v$VERSION-armeabi-v7a-release.apk.zip" -d ./apks/
+        unzip "./artifacts/Event_Scan-v$VERSION-x86_64-release.apk/Event_Scan-v$VERSION-x86_64-release.apk.zip" -d ./apks/
+        
+        # Rename APKs to include version
+        mv ./apks/app-arm64-v8a-release.apk ./apks/Event_Scan-v$VERSION-arm64-v8a-release.apk
+        mv ./apks/app-armeabi-v7a-release.apk ./apks/Event_Scan-v$VERSION-armeabi-v7a-release.apk
+        mv ./apks/app-x86_64-release.apk ./apks/Event_Scan-v$VERSION-x86_64-release.apk
+
+    - name: Extract IPAs from artifacts
+      if: ${{ inputs.build_ios == true }}
+      run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
+        mkdir -p ./ipas
+        
+        # Extract IPA from artifact zip
+        unzip "./artifacts/Event_Scan-v$VERSION-release.ipa/Event_Scan-v$VERSION-release.ipa.zip" -d ./ipas/
 
     - name: Create tag
       run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
         git config --global user.email "actions@github.com"
         git config --global user.name "GitHub Actions"
-        git tag "v${{ env.VERSION }}" || echo "Tag already exists"
-        git push origin "v${{ env.VERSION }}" || echo "Tag already pushed"
+        git tag "v$VERSION" || echo "Tag already exists"
+        git push origin "v$VERSION" || echo "Tag already pushed"
 
     - name: Prepare Release
       run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
         set -e
         git fetch --tags
         prev_release_sha=$(git log --oneline --decorate --tags --no-walk --pretty='%C(auto)%h' | head -n 2 | tail -1)
@@ -61,9 +157,95 @@ jobs:
           | jq -r '.[]|"- \(.message | first) (@\(.username))"')
         {delimiter}" >> $GITHUB_ENV
 
-        mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-armeabi-v7a-release.apk
-        mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-arm64-v8a-release.apk
-        mv build/app/outputs/flutter-apk/app-x86_64-release.apk build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-x86_64-release.apk
+    - name: Prepare release files list
+      run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
+        echo "RELEASE_FILES<<EOF" >> $GITHUB_ENV
+        
+        # Add Android APKs if built
+        if [ "${{ inputs.build_android }}" == "true" ]; then
+          echo "./apks/Event_Scan-v$VERSION-armeabi-v7a-release.apk" >> $GITHUB_ENV
+          echo "./apks/Event_Scan-v$VERSION-arm64-v8a-release.apk" >> $GITHUB_ENV
+          echo "./apks/Event_Scan-v$VERSION-x86_64-release.apk" >> $GITHUB_ENV
+        fi
+        
+        # Add iOS IPA if built
+        if [ "${{ inputs.build_ios }}" == "true" ]; then
+          echo "./ipas/Event_Scan-v$VERSION-release.ipa" >> $GITHUB_ENV
+        fi
+        
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Prepare release body
+      run: |
+        VERSION=${{ needs.trigger-build.outputs.version }}
+        
+        # Start with commits section
+        cat > release_body.md << 'EOF'
+        ### Commits
+
+        ${{env.COMMIT_LOGS}}
+
+        **Full Changelog**: https://github.com/jeryjs/Event_Scan/compare/${{ env.PREV_RELEASE_SHA }}...${{ env.CURRENT_SHA }}
+
+        ---
+        
+        ## 📱 Installation Guide
+        
+        ### Android 🤖
+        EOF
+        
+        # Add Android section conditionally
+        if [ "${{ inputs.build_android }}" == "true" ]; then
+          cat >> release_body.md << EOF
+        **Choose your device architecture:**
+        
+        | Architecture | Recommended For | Download |
+        |--------------|-----------------|----------|
+        | **ARM64** | Most modern phones (2019+) | [![Download ARM64](https://img.shields.io/badge/Download-ARM64-green?style=for-the-badge&logo=android)](https://github.com/jeryjs/Event_Scan/releases/download/v$VERSION/Event_Scan-v$VERSION-arm64-v8a-release.apk) |
+        | **ARMv7** | Older Android devices | [![Download ARMv7](https://img.shields.io/badge/Download-ARMv7-blue?style=for-the-badge&logo=android)](https://github.com/jeryjs/Event_Scan/releases/download/v$VERSION/Event_Scan-v$VERSION-armeabi-v7a-release.apk) |
+        | **x86_64** | Android emulators/tablets | [![Download x86_64](https://img.shields.io/badge/Download-x86__64-orange?style=for-the-badge&logo=android)](https://github.com/jeryjs/Event_Scan/releases/download/v$VERSION/Event_Scan-v$VERSION-x86_64-release.apk) |
+        
+        > 💡 **Not sure which one?** Download **ARM64** - it works on most modern Android devices.
+        
+        **Installation Steps:**
+        1. Enable "Install from Unknown Sources" in Android Settings
+        2. Download the APK file above
+        3. Tap the downloaded file to install
+        EOF
+        else
+          echo "⚠️ _Android builds not included in this release_" >> release_body.md
+        fi
+        
+        # Add iOS section
+        echo "" >> release_body.md
+        echo "### iOS 🍎" >> release_body.md
+        
+        if [ "${{ inputs.build_ios }}" == "true" ]; then
+          cat >> release_body.md << EOF
+        [![Download iOS](https://img.shields.io/badge/Download-iOS_IPA-blue?style=for-the-badge&logo=apple)](https://github.com/jeryjs/Event_Scan/releases/download/v$VERSION/Event_Scan-v$VERSION-release.ipa)
+        
+        **Installation Requirements:**
+        - Jailbroken device OR
+        - Apple Developer account for sideloading
+        - Use tools like AltStore, Sideloadly, or Xcode
+        
+        > ⚠️ **Note:** iOS installation requires additional setup due to Apple's security policies.
+        EOF
+        else
+          echo "⚠️ _iOS builds not included in this release_" >> release_body.md
+        fi
+        
+        # Add footer
+        cat >> release_body.md << 'EOF'
+        
+        ---
+        EOF
+        
+        # Set as environment variable
+        echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+        cat release_body.md >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
 
     - name: Create Release
       id: create_release
@@ -71,19 +253,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: "v${{ env.VERSION }}"
-        name: "v${{ env.VERSION }}"
-        body: |
-          ### Commits
-
-          ${{env.COMMIT_LOGS}}
-
-          **Full Changelog**: https://github.com/jeryjs/Event_Scan/compare/${{ env.PREV_RELEASE_SHA }}...${{ env.CURRENT_SHA }}
-
-          ---
+        tag_name: "v${{ needs.trigger-build.outputs.version }}"
+        name: "v${{ needs.trigger-build.outputs.version }}"
+        body: ${{ env.RELEASE_BODY }}
         draft: false
         prerelease: false
-        files: |
-          build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-armeabi-v7a-release.apk
-          build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-arm64-v8a-release.apk
-          build/app/outputs/flutter-apk/Event_Scan-v${{ env.VERSION }}-x86_64-release.apk
+        files: ${{ env.RELEASE_FILES }}
